@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'My Sales')}">
-<section><h1 class="text-xl font-extrabold">My Sales (GET /api/sales)</h1>
+<section><h1 class="text-xl font-extrabold">My Sales</h1>
 <div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">Receipt</th><th class="p-3 text-right">Total</th><th class="p-3 text-left">Date</th></tr></thead><tbody id="rows"></tbody></table></div>
 <script>
 document.addEventListener('DOMContentLoaded',async()=>{try{const r=await App.get('/api/sales?page=0&size=20');const{items}=App.unwrapPage(r.data);

@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Stock Levels')}">
 <section><h1 class="text-xl font-extrabold">Stock Levels</h1>
 <div class="grid md:grid-cols-2 gap-4 mt-3">
-<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold text-amber-600">Low Stock (GET /api/products/low-stock)</h3><tbody></tbody><table class="w-full text-sm mt-2"><tbody id="low"></tbody></table></div>
-<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold text-red-600">Out of Stock (GET /api/products/out-of-stock)</h3><table class="w-full text-sm mt-2"><tbody id="out"></tbody></table></div>
+<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold text-amber-600">⚠ Low Stock</h3><tbody></tbody><table class="w-full text-sm mt-2"><tbody id="low"></tbody></table></div>
+<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold text-red-600">⛔ Out of Stock</h3><table class="w-full text-sm mt-2"><tbody id="out"></tbody></table></div>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded',async()=>{

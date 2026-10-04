@@ -53,9 +53,7 @@ public class AuthService {
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
             throw new BusinessException("Current password is incorrect");
         }
-        if (newPassword == null || newPassword.length() < 6) {
-            throw new BusinessException("New password must be at least 6 characters");
-        }
+        com.guruge.hardware.util.PasswordPolicy.validate(user.getUsername(), newPassword);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }

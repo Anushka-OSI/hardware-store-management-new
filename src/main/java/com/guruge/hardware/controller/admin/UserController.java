@@ -59,7 +59,7 @@ public class UserController {
             @AuthenticationPrincipal UserPrincipal principal) {
         UserResponse updated = userService.update(
                 id, req.getFullName(), req.getPhone(), req.getAddress(),
-                req.getEmail(), currentUserId(principal));
+                req.getEmail(), req.getPassword(), currentUserId(principal));
         return ResponseEntity.ok(ApiResponse.ok("User updated", updated));
     }
 
@@ -113,6 +113,7 @@ public class UserController {
         private String phone;
         private String address;
         private String email;
+        private String password;
     }
 
     @Data

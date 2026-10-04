@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Inventory Reports')}">
 <section><h1 class="text-xl font-extrabold">Inventory Reports</h1>
 <div class="grid md:grid-cols-2 gap-4 mt-3">
-<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Valuation (GET /api/inventory/valuation)</h3><div id="val" class="text-2xl font-extrabold text-orange-600 mt-2">—</div></div>
-<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Full Report (GET /api/reports/inventory)</h3><div id="rep" class="text-sm mt-2">—</div></div>
+<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Stock Valuation</h3><div id="val" class="text-2xl font-extrabold text-orange-600 mt-2">—</div></div>
+<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Inventory Summary</h3><div id="rep" class="text-sm mt-2">—</div></div>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded',async()=>{

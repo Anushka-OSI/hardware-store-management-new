@@ -33,23 +33,54 @@ function userModal(u){
   const roles=['ADMIN','INVENTORY_MANAGER','CASHIER','SUPPLIER'].map(r=>`<option value="${r}"${r===curRole?' selected':''}>${r}</option>`).join('');
   App.openModal(`<h3 class="font-bold text-lg mb-3">${isEdit?'Edit':'Add'} User</h3>
     <div class="grid grid-cols-2 gap-3 text-sm">
-    ${isEdit?'':`<div><label for="mUsername" class="block font-medium mb-1">Username *</label><input id="mUsername" placeholder="e.g. cashier02" class="w-full border rounded px-3 py-2"/></div><div><label for="mPassword" class="block font-medium mb-1">Password *</label><input id="mPassword" type="password" placeholder="Min 6 characters" class="w-full border rounded px-3 py-2"/></div>`}
+    ${isEdit?'':`<div><label for="mUsername" class="block font-medium mb-1">Username *</label><input id="mUsername" placeholder="e.g. cashier02" class="w-full border rounded px-3 py-2"/></div><div><label for="mPassword" class="block font-medium mb-1">Password *</label><input id="mPassword" type="password" oninput="pwHint()" placeholder="Strong password" class="w-full border rounded px-3 py-2"/><div id="pwHint" class="text-xs text-slate-500 mt-1">Min 8 chars: A-Z, a-z, 0-9 + special (@#%&*)</div></div>`}
     <div><label for="mFull" class="block font-medium mb-1">Full Name</label><input id="mFull" placeholder="Full name" value="${App.escapeHtml(u.fullName||'')}" class="w-full border rounded px-3 py-2"/></div>
     <div><label for="mEmail" class="block font-medium mb-1">Email</label><input id="mEmail" placeholder="Email" value="${App.escapeHtml(u.email||'')}" class="w-full border rounded px-3 py-2"/></div>
     <div><label for="mPhone" class="block font-medium mb-1">Phone</label><input id="mPhone" placeholder="Phone" value="${App.escapeHtml(u.phone||'')}" class="w-full border rounded px-3 py-2"/></div>
     <div><label for="mRole" class="block font-medium mb-1">Role *</label><select id="mRole" class="w-full border rounded px-3 py-2">${roles}</select></div>
+    ${isEdit?`<div class="col-span-2"><label for="mNewPass" class="block font-medium mb-1">New Password <span class="font-normal text-slate-500">(leave blank to keep current)</span></label><input id="mNewPass" type="password" oninput="pwHintEdit()" placeholder="Leave blank = no change" class="w-full border rounded px-3 py-2"/><div id="pwHintEdit" class="text-xs text-slate-500 mt-1">Min 8 chars: A-Z, a-z, 0-9 + special (@#%&*)</div></div>`:''}
     </div>
     <div class="flex gap-2 mt-4"><button onclick="saveUser(${isEdit?u.id:'null'},'${curRole}')" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Save</button>
     <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
 }
+function pwCheck(pw,username){
+  if(!pw||pw.length<8)return 'Password must be at least 8 characters long';
+  if(!/[A-Z]/.test(pw))return 'Password must contain an uppercase letter (A-Z)';
+  if(!/[a-z]/.test(pw))return 'Password must contain a lowercase letter (a-z)';
+  if(!/[0-9]/.test(pw))return 'Password must contain a digit (0-9)';
+  if(!/[^A-Za-z0-9]/.test(pw))return 'Password must contain a special character (@#%&*...)';
+  const up=(username||'').split('@')[0]||'';
+  if(up&&pw.toLowerCase().includes(up.toLowerCase()))return 'Password must not contain your username';
+  return '';
+}
+function pwHint(){
+  const el=document.getElementById('pwHint');if(!el)return;
+  const msg=pwCheck((document.getElementById('mPassword')||{}).value||'',(document.getElementById('mUsername')||{}).value||'');
+  const ok=!msg;
+  el.textContent=ok?'✓ Strong password':('• '+msg);
+  el.className='text-xs mt-1 '+(ok?'text-green-600 font-semibold':'text-slate-500');
+}
+function pwHintEdit(){
+  const el=document.getElementById('pwHintEdit');if(!el)return;
+  const v=(document.getElementById('mNewPass')||{}).value||'';
+  if(!v){el.textContent='Leave blank = password stays unchanged';el.className='text-xs text-slate-500 mt-1';return;}
+  const msg=pwCheck(v,'');
+  el.textContent=msg?('• '+msg):'✓ Strong password';
+  el.className='text-xs mt-1 '+(!msg?'text-green-600 font-semibold':'text-slate-500');
+}
 async function saveUser(id,origRole){
   try{
     if(id){
-      await App.put('/api/admin/users/'+id,{fullName:val('mFull'),email:val('mEmail'),phone:val('mPhone')});
+      const np=val('mNewPass');
+      if(np){const err=pwCheck(np,'');if(err){App.toast(err,'error');return;}}
+      await App.put('/api/admin/users/'+id,{fullName:val('mFull'),email:val('mEmail'),phone:val('mPhone'),password:np||null});
       const newRole=val('mRole');
       if(newRole&&newRole!==origRole){await App.patch('/api/admin/users/'+id+'/role',{roleName:newRole});}
     }
-    else{await App.post('/api/admin/users',{username:val('mUsername'),password:val('mPassword'),fullName:val('mFull'),email:val('mEmail'),phone:val('mPhone'),roleName:val('mRole')});}
+    else{
+      const err=pwCheck(val('mPassword'),val('mUsername'));
+      if(err){App.toast(err,'error');return;}
+      await App.post('/api/admin/users',{username:val('mUsername'),password:val('mPassword'),fullName:val('mFull'),email:val('mEmail'),phone:val('mPhone'),roleName:val('mRole')});}
     App.toast('Saved','success');App.closeModal();loadUsers(pg);
   }catch(e){}
   function val(i){return(document.getElementById(i)||{}).value||'';}

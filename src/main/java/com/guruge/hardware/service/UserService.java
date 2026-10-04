@@ -61,6 +61,7 @@ public class UserService {
         if (userRepository.existsByEmail(email)) {
             throw new BusinessException("Email already exists: " + email);
         }
+        com.guruge.hardware.util.PasswordPolicy.validate(username, rawPassword);
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "name", roleName));
         String employeeId = "EMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -85,7 +86,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse update(Long id, String fullName, String phone, String address, String email, Long actorId) {
+    public UserResponse update(Long id, String fullName, String phone, String address, String email,
+                               String rawPassword, Long actorId) {
         User user = getEntity(id);
         String oldVal = user.getFullName() + "|" + user.getEmail();
         if (StringUtils.hasText(email) && !email.equalsIgnoreCase(user.getEmail())) {
@@ -99,9 +101,16 @@ public class UserService {
         }
         user.setPhone(phone);
         user.setAddress(address);
+        boolean passwordChanged = false;
+        if (StringUtils.hasText(rawPassword)) {
+            com.guruge.hardware.util.PasswordPolicy.validate(user.getUsername(), rawPassword);
+            user.setPasswordHash(passwordEncoder.encode(rawPassword));
+            passwordChanged = true;
+        }
         User saved = userRepository.save(user);
         auditLogService.log("USER_UPDATE", "User", String.valueOf(id),
-                oldVal, saved.getFullName() + "|" + saved.getEmail(), actorId, null, null);
+                oldVal, saved.getFullName() + "|" + saved.getEmail()
+                        + (passwordChanged ? "|password-changed" : ""), actorId, null, null);
         return toResponse(saved);
     }
 

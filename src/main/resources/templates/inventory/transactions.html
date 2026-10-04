@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Stock Transactions')}">
-<section><h1 class="text-xl font-extrabold">Stock Transactions (GET /api/inventory/transactions)</h1>
+<section><h1 class="text-xl font-extrabold">Stock Transactions</h1>
+<p class="text-sm text-slate-500">Latest movements first</p>
 <div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">ID</th><th class="p-3 text-left">Product</th><th class="p-3 text-left">Type</th><th class="p-3 text-right">Qty</th><th class="p-3 text-left">Date</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
 <script>
 let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadT(pg);}
-async function loadT(p=0){pg=p;try{const r=await App.get(`/api/inventory/transactions?page=${pg}&size=20`);const{items,page}=App.unwrapPage(r.data);
-document.getElementById('rows').innerHTML=items.map(t=>`<tr class="border-t"><td class="p-3">${t.id||''}</td><td class="p-3">${App.escapeHtml(t.productName||t.productId||'')}</td><td class="p-3">${App.badge(t.movementType||t.type||'')}</td><td class="p-3 text-right">${t.quantity??t.qtyChange??''}</td><td class="p-3 text-xs">${App.escapeHtml(t.createdAt||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">None</td></tr>';
+async function loadT(p=0){pg=p;try{const r=await App.get(`/api/inventory/transactions?page=${pg}&size=20&sort=createdAt,desc&sort=id,desc`);const{items,page}=App.unwrapPage(r.data);
+document.getElementById('rows').innerHTML=items.map(t=>{const pn=(t.product&&t.product.name)||t.productName||'';return `<tr class="border-t"><td class="p-3">${t.id||''}</td><td class="p-3">${App.escapeHtml(pn)}</td><td class="p-3">${App.badge(t.movementType||t.type||'')}</td><td class="p-3 text-right">${t.quantity??t.qtyChange??''}</td><td class="p-3 text-xs whitespace-nowrap">${App.escapeHtml((t.createdAt||'').replace('T',' ').substring(0,19))}</td></tr>`;}).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">None</td></tr>';
 if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages}`;}catch(e){}}
 document.addEventListener('DOMContentLoaded',()=>loadT(0));
 </script></section></html>
