@@ -122,6 +122,22 @@ public class UserService {
     }
 
     @Transactional
+    public void delete(Long id, Long actorId) {
+        // Hard delete: only succeeds when the user has NO history
+        // (sales, receipts, adjustments, audit entries reference users via FK).
+        // Otherwise a 409 is returned and the caller should deactivate instead.
+        User user = getEntity(id);
+        if (actorId != null && actorId.equals(id)) {
+            throw new BusinessException("You cannot delete your own account");
+        }
+        if (isLastActiveAdmin(user)) {
+            throw new BusinessException("Cannot delete the last active admin user");
+        }
+        userRepository.delete(user);
+        auditLogService.log("USER_DELETE", "User", String.valueOf(id), user.getUsername(), null, actorId, null, null);
+    }
+
+    @Transactional
     public UserResponse changeRole(Long id, String roleName, Long actorId) {
         User user = getEntity(id);
         Role role = roleRepository.findByName(roleName)

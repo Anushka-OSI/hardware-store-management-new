@@ -73,6 +73,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok("User status updated", updated));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('user:create','user:update','user:delete','user:role:assign')")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        userService.delete(id, currentUserId(principal));
+        return ResponseEntity.ok(ApiResponse.ok("User deleted", null));
+    }
+
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasAnyAuthority('user:create','user:update','user:delete','user:role:assign')")
     public ResponseEntity<ApiResponse<UserResponse>> changeRole(
