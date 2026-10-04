@@ -40,6 +40,11 @@ public class PurchaseOrderService {
 
     @Transactional(readOnly = true)
     public Page<PurchaseOrder> list(Long supplierId, String status, Pageable pageable) {
+        return list(supplierId, status, false, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PurchaseOrder> list(Long supplierId, String status, boolean excludeDraft, Pageable pageable) {
         Specification<PurchaseOrder> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (supplierId != null) {
@@ -47,6 +52,10 @@ public class PurchaseOrderService {
             }
             if (StringUtils.hasText(status)) {
                 predicates.add(cb.equal(root.get("status"), status.toUpperCase()));
+            }
+            if (excludeDraft) {
+                // Supplier portal: DRAFT orders are internal and must never be visible
+                predicates.add(cb.notEqual(root.get("status"), "DRAFT"));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -164,6 +173,30 @@ public class PurchaseOrderService {
         po.setStatus("CONFIRMED");
         PurchaseOrder saved = purchaseOrderRepository.save(po);
         auditLogService.log("PO_CONFIRM", "PurchaseOrder", String.valueOf(id), "SENT", "CONFIRMED", actorId, null, null);
+        return saved;
+    }
+
+    @Transactional
+    public PurchaseOrder reject(Long id, Long actorId, Long supplierScope, String reason) {
+        PurchaseOrder po = getDetail(id);
+        if (supplierScope != null) {
+            // Supplier portal: may reject only its own SENT orders
+            if (po.getSupplier() == null || !supplierScope.equals(po.getSupplier().getId())) {
+                throw new com.guruge.hardware.exception.UnauthorizedException(
+                        "You can only reject purchase orders assigned to your company.");
+            }
+        }
+        if (!"SENT".equalsIgnoreCase(po.getStatus())) {
+            throw new BusinessException("Only SENT orders can be rejected");
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessException("A rejection reason is required");
+        }
+        po.setStatus("CANCELLED");
+        String note = "Rejected by supplier: " + reason.strip();
+        po.setNotes(po.getNotes() == null || po.getNotes().isBlank() ? note : po.getNotes() + "\n" + note);
+        PurchaseOrder saved = purchaseOrderRepository.save(po);
+        auditLogService.log("PO_REJECT", "PurchaseOrder", String.valueOf(id), "SENT", "CANCELLED", actorId, null, null);
         return saved;
     }
 

@@ -8,9 +8,9 @@
   <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Delivered</div><div id="sDel" class="text-2xl font-extrabold text-green-700">—</div></div>
 </div>
 <div class="bg-white rounded-xl shadow mt-4 p-4">
-  <div class="flex items-center gap-2"><h3 class="font-bold">PO History (GET /api/purchase-orders)</h3>
-  <select id="fSt" onchange="loadPO()" class="ml-auto border rounded-lg px-3 py-1.5 text-sm"><option value="">All</option><option>SENT</option><option>CONFIRMED</option><option>RECEIVED</option></select></div>
-  <table class="w-full text-sm mt-2"><thead class="bg-slate-50"><tr><th class="p-2 text-left">PO #</th><th class="p-2 text-right">Total</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Action</th></tr></thead><tbody id="rows"></tbody></table>
+  <div class="flex items-center gap-2 flex-wrap"><h3 class="font-bold">My Purchase Orders</h3>
+  <div class="ml-auto"><label for="fSt" class="block text-xs font-medium mb-1">Status (set by store)</label><select id="fSt" onchange="loadPO()" class="border rounded-lg px-3 py-1.5 text-sm"><option value="">All statuses</option><option>SENT</option><option>CONFIRMED</option><option>PARTIALLY_RECEIVED</option><option>RECEIVED</option><option>CANCELLED</option></select></div></div>
+  <table class="w-full text-sm mt-2"><thead class="bg-slate-50"><tr><th class="p-2 text-left">PO #</th><th class="p-2 text-left">Date</th><th class="p-2 text-right">Total</th><th class="p-2 text-left">Store Status</th><th class="p-2 text-left">Your Action</th></tr></thead><tbody id="rows"></tbody></table>
 </div>
 <script>
 async function init(){try{const r=await App.get('/api/reports/dashboard/supplier');const d=r.data||{};
@@ -19,10 +19,27 @@ async function init(){try{const r=await App.get('/api/reports/dashboard/supplier
   document.getElementById('sDel').textContent=d.delivered??0;}catch(e){}}
 async function loadPO(){try{const st=document.getElementById('fSt').value;
   const r=await App.get(`/api/purchase-orders?status=${st}&page=0&size=20`);const{items}=App.unwrapPage(r.data);
-  document.getElementById('rows').innerHTML=items.map(o=>`<tr class="border-t"><td class="p-2 font-medium">${App.escapeHtml(o.poNumber||o.id)}</td>
+  document.getElementById('rows').innerHTML=items.map(o=>{const dt=(o.orderDate||'').replace('T',' ').substring(0,16);
+  return `<tr class="border-t"><td class="p-2 font-medium">${App.escapeHtml(o.poNumber||o.id)}</td>
+  <td class="p-2 text-xs text-slate-500 whitespace-nowrap">${App.escapeHtml(dt)}</td>
   <td class="p-2 text-right font-bold">${App.money(o.totalAmount)}</td><td class="p-2">${App.badge(o.status)}</td>
-  <td class="p-2">${o.status==='SENT'?`<button onclick="confirmPO(${o.id})" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Confirm</button>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="p-3 text-center text-slate-400">None</td></tr>';}catch(e){}}
-async function confirmPO(id){try{await App.patch('/api/purchase-orders/'+id+'/confirm',{});App.toast('Confirmed','success');loadPO();init();}catch(e){}}
+  <td class="p-2 flex gap-1 flex-wrap">${o.status==='SENT'
+    ?`<button onclick="confirmPO(${o.id})" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">✓ Confirm</button><button onclick="rejectModal(${o.id})" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">✕ Reject</button>`
+    :'<span class="text-xs text-slate-400">—</span>'}</td></tr>`;}).join('')||'<tr><td colspan="5" class="p-3 text-center text-slate-400">None</td></tr>';}catch(e){}}
+async function confirmPO(id){if(!confirm('Confirm availability for this order?'))return;try{await App.patch('/api/purchase-orders/'+id+'/confirm',{});App.toast('Availability confirmed','success');loadPO();init();}catch(e){}}
+function rejectModal(id){
+  App.openModal(`<h3 class="font-bold text-lg mb-1">Reject Purchase Order</h3>
+  <p class="text-sm text-slate-500 mb-3">Please tell the store why you cannot fulfill this order.</p>
+  <div><label for="rejReason" class="block text-sm font-medium mb-1">Rejection Reason *</label>
+  <textarea id="rejReason" rows="3" placeholder="e.g. Out of stock at warehouse, discontinued by manufacturer..." class="w-full border rounded px-3 py-2 text-sm"></textarea></div>
+  <div class="flex gap-2 mt-3"><button onclick="rejectPO(${id})" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold">Reject Order</button>
+  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
+}
+async function rejectPO(id){
+  const reason=(document.getElementById('rejReason')||{}).value||'';
+  if(!reason.trim())return App.toast('A reason is required','warn');
+  try{await App.patch('/api/purchase-orders/'+id+'/reject',{reason});App.toast('Order rejected','success');App.closeModal();loadPO();init();}catch(e){}
+}
 document.addEventListener('DOMContentLoaded',()=>{init();loadPO();});
 </script>
 </section>

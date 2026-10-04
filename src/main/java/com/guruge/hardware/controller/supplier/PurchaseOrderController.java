@@ -34,10 +34,13 @@ public class PurchaseOrderController {
             @PageableDefault(size = 10) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
         Long effectiveSupplierId = supplierId;
+        boolean excludeDraft = false;
         if (isSupplier(principal)) {
             effectiveSupplierId = requireOwnSupplierId(principal);
+            // Suppliers only ever see orders the store has actually SENT (or beyond)
+            excludeDraft = true;
         }
-        return ResponseEntity.ok(ApiResponse.ok(purchaseOrderService.list(effectiveSupplierId, status, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(purchaseOrderService.list(effectiveSupplierId, status, excludeDraft, pageable)));
     }
 
     @PostMapping
@@ -98,6 +101,18 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(ApiResponse.ok("Goods received", receipt));
     }
 
+    @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasAnyAuthority('po:create','po:update','po:send','po:receive','po:cancel','po:reject')")
+    public ResponseEntity<ApiResponse<PurchaseOrder>> reject(
+            @PathVariable Long id,
+            @RequestBody(required = false) RejectBody body,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        Long supplierScope = isSupplier(principal) ? requireOwnSupplierId(principal) : null;
+        String reason = body != null ? body.getReason() : null;
+        return ResponseEntity.ok(ApiResponse.ok("Purchase order rejected",
+                purchaseOrderService.reject(id, currentUserId(principal), supplierScope, reason)));
+    }
+
     @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAnyAuthority('po:create','po:update','po:send','po:receive','po:cancel')")
     public ResponseEntity<ApiResponse<PurchaseOrder>> cancel(
@@ -137,5 +152,10 @@ public class PurchaseOrderController {
     public static class ReceiveBody {
         private List<ReceiveRequest.ReceiveItemRequest> items;
         private String notes;
+    }
+
+    @Data
+    public static class RejectBody {
+        private String reason;
     }
 }

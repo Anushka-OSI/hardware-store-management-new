@@ -70,6 +70,7 @@ async function detail(id){try{const r=await App.get('/api/purchase-orders/'+id);
     <td class="p-2 text-right font-semibold">${App.money(it.totalCost)}</td></tr>`).join('');
   App.openModal(`<h3 class="font-bold mb-1">PO ${App.escapeHtml(o.poNumber||id)}</h3>
   <div class="text-xs text-slate-500 mb-2">${App.escapeHtml(o.status||'')} • Total ${App.money(o.totalAmount)}</div>
+  ${o.notes?`<div class="text-xs bg-amber-50 border border-amber-200 rounded-lg p-2 mb-2 whitespace-pre-wrap">${App.escapeHtml(o.notes)}</div>`:''}
   <table class="w-full text-sm"><tbody>${rows||'<tr><td class="p-3 text-center text-slate-400">No items</td></tr>'}</tbody></table>
   <button onclick="App.closeModal()" class="mt-3 w-full bg-slate-100 py-2 rounded-lg">Close</button>`);}catch(e){}}
 async function recvModal(id){try{const r=await App.get('/api/purchase-orders/'+id);const o=r.data||{};
