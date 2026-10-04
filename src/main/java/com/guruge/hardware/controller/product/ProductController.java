@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -71,12 +72,13 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.getById(id)));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('product:create','product:update','product:delete','product:price:update','category:manage','brand:manage','unit:manage')")
     public ResponseEntity<ApiResponse<ProductResponse>> create(
-            @Valid @RequestBody ProductRequest req,
+            @Valid @RequestPart("product") ProductRequest req,
+            @RequestPart(value = "image", required = false) MultipartFile image,
             @AuthenticationPrincipal UserPrincipal principal) {
-        ProductResponse created = productService.create(req, currentUserId(principal));
+        ProductResponse created = productService.create(req, image, currentUserId(principal));
         return ResponseEntity.ok(ApiResponse.ok("Product created", created));
     }
 

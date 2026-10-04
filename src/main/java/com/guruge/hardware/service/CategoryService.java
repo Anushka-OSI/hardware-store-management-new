@@ -36,7 +36,7 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public List<Category> listActive() {
-        return categoryRepository.findByIsActive(true);
+        return categoryRepository.findByIsActiveOrderBySortOrderAscNameAsc(true);
     }
 
     @Transactional

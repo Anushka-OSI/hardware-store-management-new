@@ -15,7 +15,7 @@ async function loadPO(p=0){pg=p;const st=document.getElementById('fSt').value;
   try{const r=await App.get(`/api/purchase-orders?status=${st}&page=${pg}&size=10`);
   const{items,page}=App.unwrapPage(r.data);
   document.getElementById('rows').innerHTML=items.map(o=>`<tr class="border-t">
-    <td class="p-3 font-medium">${App.escapeHtml(o.poNumber||o.id)}</td><td class="p-3">${App.escapeHtml(o.supplierName||o.supplierId||'')}</td>
+    <td class="p-3 font-medium">${App.escapeHtml(o.poNumber||o.id)}</td><td class="p-3">${App.escapeHtml((o.supplier&&o.supplier.companyName)||o.supplierName||'')}</td>
     <td class="p-3 text-right font-bold">${App.money(o.totalAmount)}</td><td class="p-3">${App.badge(o.status)}</td>
     <td class="p-3 flex gap-1 flex-wrap">
       <button onclick="detail(${o.id})" class="px-2 py-1 bg-slate-100 rounded">View</button>

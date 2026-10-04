@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const out=(p.currentStock||0)<=0;
     document.getElementById('detail').innerHTML=`
       <div class="grid md:grid-cols-2 gap-6">
-        <div class="bg-slate-100 rounded-xl overflow-hidden h-80">${App.img(p.imageUrl,p.name)}</div>
+        <div class="bg-slate-100 rounded-xl overflow-hidden h-80 p-4">${App.img(p.imageUrl,p.name)}</div>
         <div>
           <div class="text-xs text-slate-500">${App.escapeHtml(p.brandName||'')} • SKU: ${App.escapeHtml(p.sku||'')}</div>
           <h1 class="text-2xl font-extrabold mt-1">${App.escapeHtml(p.name)}</h1>

@@ -28,7 +28,7 @@ window.Catalogue = (() => {
   function card(p) {
     const out = p.currentStock <= 0;
     return `<div class="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden flex flex-col">
-      <a href="/product/${p.id}" class="h-44 overflow-hidden bg-slate-100">${App.img(p.imageUrl, p.name)}</a>
+      <a href="/product/${p.id}" class="h-44 overflow-hidden bg-slate-100 p-2 block">${App.img(p.imageUrl, p.name)}</a>
       <div class="p-3 flex-1 flex flex-col gap-1">
         <div class="text-xs text-slate-500">${App.escapeHtml(p.brandName || '')} • ${App.escapeHtml(p.sku || '')}</div>
         <a href="/product/${p.id}" class="font-semibold hover:text-orange-600 line-clamp-2">${App.escapeHtml(p.name)}</a>

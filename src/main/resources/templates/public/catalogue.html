@@ -6,7 +6,7 @@
   <div class="md:col-span-2"><label for="searchInp" class="block text-xs font-medium mb-1">Search</label><input id="searchInp" placeholder="Name / SKU / brand..." class="w-full border rounded-lg px-3 py-2"/></div>
   <div><label for="catSel" class="block text-xs font-medium mb-1">Category</label><select id="catSel" class="w-full border rounded-lg px-3 py-2"><option value="">All Categories</option></select></div>
   <div><label for="brandSel" class="block text-xs font-medium mb-1">Brand</label><select id="brandSel" class="w-full border rounded-lg px-3 py-2"><option value="">All Brands</option></select></div>
-  <div><label for="sortSel" class="block text-xs font-medium mb-1">Sort By</label><select id="sortSel" class="w-full border rounded-lg px-3 py-2"><option value="">Sort: Default</option><option value="priceAsc">Price ↑</option><option value="priceDesc">Price ↓</option><option value="nameAsc">Name A–Z</option></select></div>
+  <div><label for="sortSel" class="block text-xs font-medium mb-1">Sort By</label><select id="sortSel" onchange="Catalogue.load(0)" class="w-full border rounded-lg px-3 py-2"><option value="">Sort: Default</option><option value="price_asc">Price: Low → High</option><option value="price_desc">Price: High → Low</option><option value="name_asc">Name: A → Z</option><option value="name_desc">Name: Z → A</option><option value="newest">Newest First</option></select></div>
   <div><label for="availSel" class="block text-xs font-medium mb-1">Availability</label><select id="availSel" class="w-full border rounded-lg px-3 py-2"><option value="">All stock</option><option value="IN_STOCK">In stock</option><option value="OUT">Out of stock</option></select></div>
   <div><label for="minP" class="block text-xs font-medium mb-1">Min Price (Rs.)</label><input id="minP" type="number" min="0" placeholder="Min Rs." class="w-full border rounded-lg px-3 py-2"/></div>
   <div><label for="maxP" class="block text-xs font-medium mb-1">Max Price (Rs.)</label><input id="maxP" type="number" min="0" placeholder="Max Rs." class="w-full border rounded-lg px-3 py-2"/></div>
@@ -20,7 +20,7 @@
   <span id="pageInfo" class="text-slate-500">Page 1</span>
   <button onclick="__pageGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button>
 </div>
-<script src="/js/catalogue.js"></script>
+<script src="/js/catalogue.js?v=20261004-03"></script>
 <script>
 let __pg=0;function __pageGo(d){__pg=Math.max(0,__pg+d);Catalogue.load(__pg);}
 document.addEventListener('DOMContentLoaded',async()=>{

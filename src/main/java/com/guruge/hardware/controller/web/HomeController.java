@@ -1,5 +1,6 @@
 package com.guruge.hardware.controller.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
@@ -78,30 +79,35 @@ public class HomeController {
     }
 
     @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
     public String adminDashboard(Model model) {
         model.addAttribute("page", "admin-dashboard");
         return "admin/dashboard";
     }
 
     @GetMapping("/inventory/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN','INVENTORY_MANAGER')")
     public String inventoryDashboard(Model model) {
         model.addAttribute("page", "inventory-dashboard");
         return "inventory/dashboard";
     }
 
     @GetMapping("/cashier/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN','CASHIER')")
     public String cashierDashboard(Model model) {
         model.addAttribute("page", "cashier-dashboard");
         return "cashier/dashboard";
     }
 
     @GetMapping("/cashier/pos")
+    @PreAuthorize("hasAnyRole('ADMIN','CASHIER')")
     public String pos(Model model) {
         model.addAttribute("page", "pos");
         return "cashier/pos";
     }
 
     @GetMapping("/supplier/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPPLIER')")
     public String supplierDashboard(Model model) {
         model.addAttribute("page", "supplier-dashboard");
         return "supplier/dashboard";

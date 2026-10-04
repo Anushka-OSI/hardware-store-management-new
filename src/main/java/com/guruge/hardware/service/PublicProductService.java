@@ -90,11 +90,12 @@ public class PublicProductService {
     private Pageable applySort(Pageable pageable, String sort) {
         Sort s = pageable.getSort();
         if (StringUtils.hasText(sort)) {
-            switch (sort) {
-                case "price_asc" -> s = Sort.by(Sort.Direction.ASC, "sellingPrice");
-                case "price_desc" -> s = Sort.by(Sort.Direction.DESC, "sellingPrice");
-                case "name_asc" -> s = Sort.by(Sort.Direction.ASC, "name");
-                case "name_desc" -> s = Sort.by(Sort.Direction.DESC, "name");
+            String normalized = sort.trim().toLowerCase().replace("_", "");
+            switch (normalized) {
+                case "priceasc" -> s = Sort.by(Sort.Direction.ASC, "sellingPrice");
+                case "pricedesc" -> s = Sort.by(Sort.Direction.DESC, "sellingPrice");
+                case "nameasc" -> s = Sort.by(Sort.Direction.ASC, "name");
+                case "namedesc" -> s = Sort.by(Sort.Direction.DESC, "name");
                 case "newest" -> s = Sort.by(Sort.Direction.DESC, "createdAt");
                 default -> {
                 }

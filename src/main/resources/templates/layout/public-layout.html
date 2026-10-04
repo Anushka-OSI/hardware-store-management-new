@@ -6,7 +6,7 @@
   <title th:text="${pageTitle} ?: 'GURUGE HARDWARE'">GURUGE HARDWARE</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{colors:{brand:{50:'#fff7ed',500:'#f97316',600:'#ea580c',700:'#c2410c'}}}}}</script>
-  <link rel="stylesheet" href="/css/custom.css"/>
+  <link rel="stylesheet" href="/css/custom.css?v=20261004-03"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
@@ -54,8 +54,8 @@
   <div class="text-center text-xs py-3 border-t border-slate-700">© 2026 Guruge Hardware. All rights reserved.</div>
 </footer>
 <div id="toastWrap" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
-<script src="/js/app.js"></script>
-<script src="/js/cart.js"></script>
+<script src="/js/app.js?v=20261004-03"></script>
+<script src="/js/cart.js?v=20261004-03"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{Cart.refreshBadge();});function globalSearchGo(){const q=document.getElementById('globalSearch').value||'';location.href='/catalogue?keyword='+encodeURIComponent(q);}</script>
 </body>
 </html>

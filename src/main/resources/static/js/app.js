@@ -21,6 +21,19 @@ window.App = (() => {
   const put = (u, d) => api(u, { method: 'PUT', body: JSON.stringify(d) });
   const patch = (u, d) => api(u, { method: 'PATCH', body: JSON.stringify(d) });
   const del = (u) => api(u, { method: 'DELETE' });
+  async function postForm(url, formData) {
+    const res = await fetch(url, { credentials: 'same-origin', method: 'POST', body: formData });
+    const ct = res.headers.get('content-type') || '';
+    let body = null;
+    try { body = ct.includes('json') ? await res.json() : await res.text(); } catch (e) { /* ignore */ }
+    if (!res.ok) {
+      const msg = (body && body.message) || ('Upload failed: ' + res.status);
+      toast(msg, 'error');
+      throw new Error(msg);
+    }
+    return body;
+  }
+  const postImg = (u, file) => { const fd = new FormData(); fd.append('file', file); return postForm(u, fd); };
 
   function toast(msg, type = 'info') {
     const wrap = document.getElementById('toastWrap');
@@ -55,9 +68,14 @@ window.App = (() => {
   }
   function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function money(v) { const n = Number(v || 0); return 'Rs. ' + n.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function imgUrl(url) {
+    if (!url) return '';
+    if (/^(https?:|data:|blob:|\/)/i.test(url)) return url;
+    return '/uploads/' + url.replace(/^\.\//, '');
+  }
   function img(url, alt) {
-    const src = url || 'https://placehold.co/400x300?text=No+Image';
-    return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt || '')}" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=No+Image'" class="object-cover"/>`;
+    const src = imgUrl(url) || 'https://placehold.co/400x300?text=No+Image';
+    return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt || '')}" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=No+Image'" class="w-full h-full object-contain"/>`;
   }
   function pageParams(page, size) { return `page=${page || 0}&size=${size || 10}`; }
   function unwrapPage(data) {
@@ -66,6 +84,6 @@ window.App = (() => {
     if (Array.isArray(data.content)) return { items: data.content, page: data };
     return { items: [], page: null };
   }
-  return { api, get, post, put, patch, del, toast, openModal, closeModal, badge, escapeHtml, money, img, pageParams, unwrapPage };
+  return { api, get, post, put, patch, del, postForm, postImg, toast, openModal, closeModal, badge, escapeHtml, money, img, imgUrl, pageParams, unwrapPage };
 })();
 function toast(m, t) { App.toast(m, t); }

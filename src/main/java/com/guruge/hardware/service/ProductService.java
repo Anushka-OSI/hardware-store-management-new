@@ -119,7 +119,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse create(ProductRequest req, Long actorId) {
+    public ProductResponse create(ProductRequest req, MultipartFile imageFile, Long actorId) {
         if (!StringUtils.hasText(req.getSku())) {
             req.setSku(generateSku(req.getCategoryId()));
         }
@@ -131,14 +131,26 @@ public class ProductService {
                 throw new BusinessException("Barcode already exists: " + req.getBarcode());
             });
         }
+        if (req.getCategoryId() == null) {
+            throw new BusinessException("Category is required");
+        }
+        if (req.getBrandId() == null) {
+            throw new BusinessException("Brand is required");
+        }
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new BusinessException("Product image is required");
+        }
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", req.getCategoryId()));
         Unit unit = unitRepository.findById(req.getUnitId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unit", "id", req.getUnitId()));
-        Brand brand = null;
-        if (req.getBrandId() != null) {
-            brand = brandRepository.findById(req.getBrandId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Brand", "id", req.getBrandId()));
+        Brand brand = brandRepository.findById(req.getBrandId())
+                .orElseThrow(() -> new ResourceNotFoundException("Brand", "id", req.getBrandId()));
+        String imageUrl;
+        try {
+            imageUrl = fileUploadUtils.save(imageFile, "product-images");
+        } catch (IOException ex) {
+            throw new BusinessException("Failed to upload image: " + ex.getMessage(), ex);
         }
         Product product = Product.builder()
                 .sku(req.getSku())
@@ -156,6 +168,7 @@ public class ProductService {
                 .minStockLevel(req.getMinStockLevel() != null ? req.getMinStockLevel() : 10)
                 .maxStockLevel(req.getMaxStockLevel())
                 .status(StringUtils.hasText(req.getStatus()) ? req.getStatus().toUpperCase() : "ACTIVE")
+                .imageUrl(imageUrl)
                 .createdBy(actorId)
                 .updatedBy(actorId)
                 .build();

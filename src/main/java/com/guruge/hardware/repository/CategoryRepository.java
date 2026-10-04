@@ -15,6 +15,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
 
     List<Category> findByIsActive(Boolean isActive);
 
+    List<Category> findByIsActiveOrderBySortOrderAscNameAsc(Boolean isActive);
+
     List<Category> findByParentId(Long parentId);
 
     boolean existsBySlug(String slug);

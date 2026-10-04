@@ -15,8 +15,11 @@
     <div class="text-7xl md:text-8xl">🧰</div>
   </div>
   <!-- Categories -->
-  <h2 class="text-xl font-extrabold mt-8 mb-3">Shop by Category</h2>
-  <div id="homeCats" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+  <div class="flex items-center mt-6 mb-2">
+    <h2 class="text-lg font-extrabold">Shop by Category</h2>
+    <a href="/catalogue" class="ml-auto text-sm text-orange-600 hover:underline">View all →</a>
+  </div>
+  <div id="homeCats" class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"></div>
   <!-- Featured -->
   <h2 class="text-xl font-extrabold mt-8 mb-3">⭐ Featured Products</h2>
   <div id="featured" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
@@ -27,7 +30,7 @@
 async function card(p){
   const out=(p.currentStock||0)<=0;
   return `<div class="bg-white rounded-xl shadow overflow-hidden flex flex-col">
-    <a href="/product/${p.id}" class="h-40 bg-slate-100 overflow-hidden">${App.img(p.imageUrl,p.name)}</a>
+    <a href="/product/${p.id}" class="h-40 bg-slate-100 overflow-hidden block p-2">${App.img(p.imageUrl,p.name)}</a>
     <div class="p-3"><a href="/product/${p.id}" class="font-semibold text-sm line-clamp-2 hover:text-orange-600">${App.escapeHtml(p.name)}</a>
     <div class="font-extrabold text-orange-600 mt-1">${App.money(p.sellingPrice)}</div>
     <button ${out?'disabled':''} onclick='Cart.add(${JSON.stringify({id:p.id,name:p.name,sellingPrice:p.sellingPrice,imageUrl:p.imageUrl,currentStock:p.currentStock})},1)'
@@ -36,8 +39,8 @@ async function card(p){
 document.addEventListener('DOMContentLoaded', async ()=>{
   try{
     const c=await App.get('/api/public/categories');
-    document.getElementById('homeCats').innerHTML=(c.data||[]).slice(0,8).map(x=>
-      `<a href="/catalogue?categoryId=${x.id}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg text-center"><div class="text-3xl">🗂️</div><div class="font-semibold text-sm mt-2">${App.escapeHtml(x.name)}</div></a>`).join('')||'<div class="text-slate-400">No categories</div>';
+    document.getElementById('homeCats').innerHTML=(c.data||[]).map(x=>
+      `<a href="/catalogue?categoryId=${x.id}" class="shrink-0 flex items-center gap-2 bg-white border border-slate-200 hover:border-orange-500 hover:shadow rounded-full pl-1.5 pr-4 py-1.5"><span class="w-8 h-8 grid place-items-center rounded-full bg-orange-100 text-base">🗂️</span><span class="font-semibold text-sm whitespace-nowrap">${App.escapeHtml(x.name)}</span></a>`).join('')||'<div class="text-slate-400 text-sm">No categories</div>';
   }catch(e){}
   try{
     const f=await App.get('/api/public/products/featured');
