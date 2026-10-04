@@ -87,11 +87,18 @@ public class SupplierService {
     @Transactional
     public void delete(Long id, Long actorId) {
         // Soft delete: keep historical purchase orders intact
+        changeStatus(id, "INACTIVE", actorId);
+    }
+
+    @Transactional
+    public Supplier changeStatus(Long id, String status, Long actorId) {
         Supplier supplier = getById(id);
         String old = supplier.getStatus();
-        supplier.setStatus("INACTIVE");
-        supplierRepository.save(supplier);
-        auditLogService.log("SUPPLIER_DEACTIVATE", "Supplier", String.valueOf(id), old, "INACTIVE", actorId, null, null);
+        String next = StringUtils.hasText(status) ? status.toUpperCase() : "ACTIVE";
+        supplier.setStatus(next);
+        Supplier saved = supplierRepository.save(supplier);
+        auditLogService.log("SUPPLIER_STATUS", "Supplier", String.valueOf(id), old, next, actorId, null, null);
+        return saved;
     }
 
     @Transactional(readOnly = true)

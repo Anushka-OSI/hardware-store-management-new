@@ -63,7 +63,17 @@ public class SupplierController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal principal) {
         supplierService.delete(id, currentUserId(principal));
-        return ResponseEntity.ok(ApiResponse.ok("Supplier deleted", null));
+        return ResponseEntity.ok(ApiResponse.ok("Supplier deactivated", null));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyAuthority('supplier:create','supplier:update','supplier:delete')")
+    public ResponseEntity<ApiResponse<Supplier>> changeStatus(
+            @PathVariable Long id,
+            @RequestBody StatusRequest req,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok("Supplier status updated",
+                supplierService.changeStatus(id, req.getStatus(), currentUserId(principal))));
     }
 
     @GetMapping("/{id}/purchase-history")
@@ -74,5 +84,10 @@ public class SupplierController {
 
     private Long currentUserId(UserPrincipal principal) {
         return principal != null ? principal.getId() : null;
+    }
+
+    @lombok.Data
+    public static class StatusRequest {
+        private String status;
     }
 }

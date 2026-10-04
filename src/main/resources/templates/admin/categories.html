@@ -23,7 +23,7 @@ function cModal(c){c=c||{};const e=!!c.id;
 async function saveC(id){const b={name:document.getElementById('cName').value,description:document.getElementById('cDesc').value};
   try{id?await App.put('/api/categories/'+id,b):await App.post('/api/categories',b);App.toast('Saved','success');App.closeModal();loadC();}catch(e){}}
 async function toggleC(id,a){try{await App.patch('/api/categories/'+id+'/status',{active:!a});loadC();}catch(e){}}
-async function delC(id){if(!confirm('Delete?'))return;try{await App.del('/api/categories/'+id);loadC();}catch(e){}}
+async function delC(id){if(!confirm('Deactivate this category? Products stay untouched.'))return;try{await App.del('/api/categories/'+id);App.toast('Category deactivated','success');loadC();}catch(e){}}
 document.addEventListener('DOMContentLoaded',loadC);
 </script>
 </section>
