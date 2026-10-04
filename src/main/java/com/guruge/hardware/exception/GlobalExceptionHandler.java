@@ -84,6 +84,18 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "Resource not found", null, request);
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(
+            org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+        log.warn("Data integrity violation on {} {}: {}",
+                request != null ? request.getMethod() : "?",
+                request != null ? request.getRequestURI() : "?",
+                ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage());
+        return build(HttpStatus.CONFLICT,
+                "Cannot delete: this record is already used in sales, purchases or stock history. Deactivate it instead.",
+                null, request);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleNotReadable(
             HttpMessageNotReadableException ex, HttpServletRequest request) {

@@ -73,11 +73,10 @@ public class BrandService {
 
     @Transactional
     public void delete(Long id, Long actorId) {
-        // Soft delete: products reference brands via FK
+        // Hard delete: only succeeds when NO products use this brand (FK).
         Brand brand = getEntity(id);
-        brand.setIsActive(false);
-        brandRepository.save(brand);
-        auditLogService.log("BRAND_DEACTIVATE", "Brand", String.valueOf(id), brand.getName(), "INACTIVE", actorId, null, null);
+        brandRepository.delete(brand);
+        auditLogService.log("BRAND_DELETE", "Brand", String.valueOf(id), brand.getName(), null, actorId, null, null);
     }
 
     @Transactional

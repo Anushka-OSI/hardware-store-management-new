@@ -63,11 +63,10 @@ public class UnitService {
 
     @Transactional
     public void delete(Long id, Long actorId) {
-        // Soft delete: products reference units via FK
+        // Hard delete: only succeeds when NO products use this unit (FK).
         Unit unit = getEntity(id);
-        unit.setIsActive(false);
-        unitRepository.save(unit);
-        auditLogService.log("UNIT_DEACTIVATE", "Unit", String.valueOf(id), unit.getName(), "INACTIVE", actorId, null, null);
+        unitRepository.delete(unit);
+        auditLogService.log("UNIT_DELETE", "Unit", String.valueOf(id), unit.getName(), null, actorId, null, null);
     }
 
     @Transactional

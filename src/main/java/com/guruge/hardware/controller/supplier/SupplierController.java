@@ -28,7 +28,15 @@ public class SupplierController {
     @PreAuthorize("hasAuthority('supplier:read')")
     public ResponseEntity<ApiResponse<Page<Supplier>>> search(
             @RequestParam(required = false) String keyword,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        if (isSupplier(principal)) {
+            // Supplier portal: may see only its own company record
+            Supplier own = supplierService.getById(requireOwnSupplierId(principal));
+            Page<Supplier> page = new org.springframework.data.domain.PageImpl<>(
+                    java.util.List.of(own), pageable, 1);
+            return ResponseEntity.ok(ApiResponse.ok(page));
+        }
         return ResponseEntity.ok(ApiResponse.ok(supplierService.search(keyword, pageable)));
     }
 
@@ -43,7 +51,13 @@ public class SupplierController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('supplier:read')")
-    public ResponseEntity<ApiResponse<Supplier>> getById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Supplier>> getById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        if (isSupplier(principal) && !requireOwnSupplierId(principal).equals(id)) {
+            throw new com.guruge.hardware.exception.UnauthorizedException(
+                    "You can only view your own company record.");
+        }
         return ResponseEntity.ok(ApiResponse.ok(supplierService.getById(id)));
     }
 
@@ -78,12 +92,30 @@ public class SupplierController {
 
     @GetMapping("/{id}/purchase-history")
     @PreAuthorize("hasAuthority('supplier:read')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> purchaseHistory(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> purchaseHistory(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        if (isSupplier(principal) && !requireOwnSupplierId(principal).equals(id)) {
+            throw new com.guruge.hardware.exception.UnauthorizedException(
+                    "You can only view your own purchase history.");
+        }
         return ResponseEntity.ok(ApiResponse.ok(supplierService.purchaseHistory(id)));
     }
 
     private Long currentUserId(UserPrincipal principal) {
         return principal != null ? principal.getId() : null;
+    }
+
+    private boolean isSupplier(UserPrincipal principal) {
+        return principal != null && "SUPPLIER".equalsIgnoreCase(principal.getRoleName());
+    }
+
+    private Long requireOwnSupplierId(UserPrincipal principal) {
+        if (principal == null || principal.getSupplierId() == null) {
+            throw new com.guruge.hardware.exception.BusinessException(
+                    "Your login is not linked to a supplier account. Contact the administrator.");
+        }
+        return principal.getSupplierId();
     }
 
     @lombok.Data

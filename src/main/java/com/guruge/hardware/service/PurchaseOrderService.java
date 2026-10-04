@@ -145,12 +145,26 @@ public class PurchaseOrderService {
 
     @Transactional
     public PurchaseOrder confirm(Long id, Long actorId) {
+        return confirm(id, actorId, null);
+    }
+
+    @Transactional
+    public PurchaseOrder confirm(Long id, Long actorId, Long supplierScope) {
         PurchaseOrder po = getDetail(id);
+        if (supplierScope != null) {
+            // Supplier portal: may confirm only its own SENT orders (availability check)
+            if (po.getSupplier() == null || !supplierScope.equals(po.getSupplier().getId())) {
+                throw new com.guruge.hardware.exception.UnauthorizedException(
+                        "You can only confirm purchase orders assigned to your company.");
+            }
+        }
         if (!"SENT".equalsIgnoreCase(po.getStatus())) {
             throw new BusinessException("Only SENT orders can be confirmed");
         }
         po.setStatus("CONFIRMED");
-        return purchaseOrderRepository.save(po);
+        PurchaseOrder saved = purchaseOrderRepository.save(po);
+        auditLogService.log("PO_CONFIRM", "PurchaseOrder", String.valueOf(id), "SENT", "CONFIRMED", actorId, null, null);
+        return saved;
     }
 
     @Transactional

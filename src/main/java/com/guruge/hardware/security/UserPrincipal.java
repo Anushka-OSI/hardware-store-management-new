@@ -25,6 +25,7 @@ public class UserPrincipal implements UserDetails {
     private String roleName;
     private List<String> permissions = new ArrayList<>();
     private String status;
+    private Long supplierId;
 
     public static UserPrincipal fromUser(User user) {
         UserPrincipal principal = new UserPrincipal();
@@ -33,6 +34,7 @@ public class UserPrincipal implements UserDetails {
         principal.setPassword(user.getPasswordHash());
         principal.setFullName(user.getFullName());
         principal.setStatus(user.getStatus());
+        principal.setSupplierId(user.getSupplierId());
         if (user.getRole() != null) {
             principal.setRoleName(user.getRole().getName());
             List<String> perms = new ArrayList<>();

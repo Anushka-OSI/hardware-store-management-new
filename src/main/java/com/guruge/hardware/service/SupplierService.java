@@ -86,8 +86,11 @@ public class SupplierService {
 
     @Transactional
     public void delete(Long id, Long actorId) {
-        // Soft delete: keep historical purchase orders intact
-        changeStatus(id, "INACTIVE", actorId);
+        // Hard delete: only succeeds when the supplier has NO purchase orders
+        // or receipts (FK constraint). Otherwise deactivate instead.
+        Supplier supplier = getById(id);
+        supplierRepository.delete(supplier);
+        auditLogService.log("SUPPLIER_DELETE", "Supplier", String.valueOf(id), supplier.getCompanyName(), null, actorId, null, null);
     }
 
     @Transactional

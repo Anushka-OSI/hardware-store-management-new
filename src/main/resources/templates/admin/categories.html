@@ -1,30 +1,54 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Categories')}">
 <section>
-<div class="flex items-center gap-2"><h1 class="text-xl font-extrabold">Categories</h1>
-<button onclick="cModal()" class="ml-auto bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Add</button></div>
-<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm">
-<thead class="bg-slate-50"><tr><th class="p-3 text-left">Name</th><th class="p-3 text-left">Description</th><th class="p-3 text-left">Active</th><th class="p-3 text-left">Actions</th></tr></thead>
-<tbody id="rows"></tbody></table></div>
-<script>
-async function loadC(){try{const r=await App.get('/api/categories?page=0&size=100');
-  const{items}=App.unwrapPage(r.data);
-  document.getElementById('rows').innerHTML=items.map(c=>{const on=c.isActive??c.active??true;return `<tr class="border-t"><td class="p-3 font-medium">${App.escapeHtml(c.name)}</td>
-  <td class="p-3">${App.escapeHtml(c.description||'')}</td><td class="p-3">${on?App.badge('ACTIVE'):App.badge('INACTIVE')}</td>
+  <div class="flex items-center gap-2">
+    <h1 class="text-xl font-extrabold">Categories</h1>
+    <button onclick="cModal()" class="ml-auto bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+
+      Add</button>
+  </div>
+  <div class="bg-white rounded-xl shadow mt-3 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="p-3 text-left">Name</th>
+          <th class="p-3 text-left">Description</th>
+          <th class="p-3 text-left">Active</th>
+          <th class="p-3 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <script>
+    async function loadC() {
+      try {
+        const r = await App.get('/api/categories?page=0&size=100');
+        const { items } = App.unwrapPage(r.data);
+        document.getElementById('rows').innerHTML = items.map(c => {
+          const on = c.isActive ?? c.active ?? true; return `<tr class="border-t"><td class="p-3 font-medium">${App.escapeHtml(c.name)}</td>
+  <td class="p-3">${App.escapeHtml(c.description || '')}</td><td class="p-3">${on ? App.badge('ACTIVE') : App.badge('INACTIVE')}</td>
   <td class="p-3 flex gap-1"><button onclick='cModal(${JSON.stringify(c)})' class="px-2 py-1 bg-slate-100 rounded">Edit</button>
-  <button onclick="toggleC(${c.id},${on})" class="px-2 py-1 bg-amber-100 rounded">${on?'Disable':'Enable'}</button>
-  <button onclick="delC(${c.id})" class="px-2 py-1 bg-red-100 text-red-700 rounded">Delete</button></td></tr>`;}).join('')||'<tr><td colspan="4" class="p-4 text-center text-slate-400">None</td></tr>';}catch(e){}}
-function cModal(c){c=c||{};const e=!!c.id;
-  App.openModal(`<h3 class="font-bold mb-3">${e?'Edit':'Add'} Category</h3>
-  <div><label for="cName" class="block font-medium mb-1 text-sm">Category Name *</label><input id="cName" value="${App.escapeHtml(c.name||'')}" placeholder="Category name" class="w-full border rounded px-3 py-2 text-sm"/></div>
-  <div class="mt-2"><label for="cDesc" class="block font-medium mb-1 text-sm">Description</label><textarea id="cDesc" placeholder="Description" class="w-full border rounded px-3 py-2 text-sm">${App.escapeHtml(c.description||'')}</textarea></div>
-  <div class="flex gap-2 mt-3"><button onclick="saveC(${e?c.id:'null'})" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Save</button>
-  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);}
-async function saveC(id){const b={name:document.getElementById('cName').value,description:document.getElementById('cDesc').value};
-  try{id?await App.put('/api/categories/'+id,b):await App.post('/api/categories',b);App.toast('Saved','success');App.closeModal();loadC();}catch(e){}}
-async function toggleC(id,a){try{await App.patch('/api/categories/'+id+'/status',{active:!a});loadC();}catch(e){}}
-async function delC(id){if(!confirm('Deactivate this category? Products stay untouched.'))return;try{await App.del('/api/categories/'+id);App.toast('Category deactivated','success');loadC();}catch(e){}}
-document.addEventListener('DOMContentLoaded',loadC);
-</script>
+  <button onclick="toggleC(${c.id},${on})" class="px-2 py-1 bg-amber-100 rounded">${on ? 'Disable' : 'Enable'}</button>
+  <button onclick="delC(${c.id})" class="px-2 py-1 bg-red-100 text-red-700 rounded">Delete</button></td></tr>`;
+        }).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">None</td></tr>';
+      } catch (e) { }
+    }
+    function cModal(c) {
+      c = c || {}; const e = !!c.id;
+      App.openModal(`<h3 class="font-bold mb-3">${e ? 'Edit' : 'Add'} Category</h3>
+  <div><label for="cName" class="block font-medium mb-1 text-sm">Category Name *</label><input id="cName" value="${App.escapeHtml(c.name || '')}" placeholder="Category name" class="w-full border rounded px-3 py-2 text-sm"/></div>
+  <div class="mt-2"><label for="cDesc" class="block font-medium mb-1 text-sm">Description</label><textarea id="cDesc" placeholder="Description" class="w-full border rounded px-3 py-2 text-sm">${App.escapeHtml(c.description || '')}</textarea></div>
+  <div class="flex gap-2 mt-3"><button onclick="saveC(${e ? c.id : 'null'})" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Save</button>
+  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
+    }
+    async function saveC(id) {
+      const b = { name: document.getElementById('cName').value, description: document.getElementById('cDesc').value };
+      try { id ? await App.put('/api/categories/' + id, b) : await App.post('/api/categories', b); App.toast('Saved', 'success'); App.closeModal(); loadC(); } catch (e) { }
+    }
+    async function toggleC(id, a) { try { await App.patch('/api/categories/' + id + '/status', { active: !a }); loadC(); } catch (e) { } }
+    async function delC(id) { if (!confirm('PERMANENTLY delete this category? This only works if no products use it. Otherwise disable it instead.')) return; try { await App.del('/api/categories/' + id); App.toast('Category deleted', 'success'); loadC(); } catch (e) { } }
+    document.addEventListener('DOMContentLoaded', loadC);
+  </script>
 </section>
+
 </html>

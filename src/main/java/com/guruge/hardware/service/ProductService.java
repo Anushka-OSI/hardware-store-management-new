@@ -237,13 +237,12 @@ public class ProductService {
 
     @Transactional
     public void delete(Long id, Long actorId) {
-        // Soft delete: keep historical sales/purchases intact
+        // Hard delete: only succeeds when the product is NOT referenced by
+        // sales, purchase orders or inventory history (FK constraint).
+        // Otherwise a 409 is returned and the caller should deactivate instead.
         Product product = getEntity(id);
-        String old = product.getStatus();
-        product.setStatus("INACTIVE");
-        product.setUpdatedBy(actorId);
-        productRepository.save(product);
-        auditLogService.log("PRODUCT_DEACTIVATE", "Product", String.valueOf(id), old, "INACTIVE", actorId, null, null);
+        productRepository.delete(product);
+        auditLogService.log("PRODUCT_DELETE", "Product", String.valueOf(id), product.getSku(), null, actorId, null, null);
     }
 
     @Transactional

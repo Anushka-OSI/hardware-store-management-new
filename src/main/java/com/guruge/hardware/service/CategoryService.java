@@ -89,11 +89,11 @@ public class CategoryService {
 
     @Transactional
     public void delete(Long id, Long actorId) {
-        // Soft delete: products reference categories via FK
+        // Hard delete: only succeeds when NO products use this category (FK).
+        // Otherwise deactivate instead.
         Category category = getEntity(id);
-        category.setIsActive(false);
-        categoryRepository.save(category);
-        auditLogService.log("CATEGORY_DEACTIVATE", "Category", String.valueOf(id), category.getName(), "INACTIVE", actorId, null, null);
+        categoryRepository.delete(category);
+        auditLogService.log("CATEGORY_DELETE", "Category", String.valueOf(id), category.getName(), null, actorId, null, null);
     }
 
     @Transactional

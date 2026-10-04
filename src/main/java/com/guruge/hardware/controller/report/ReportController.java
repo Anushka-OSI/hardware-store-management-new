@@ -45,8 +45,16 @@ public class ReportController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> supplierDashboard(
             @RequestParam(required = false) Long supplierId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        Long effectiveId = supplierId != null ? supplierId
-                : (principal != null ? principal.getId() : null);
+        Long effectiveId;
+        if (principal != null && "SUPPLIER".equalsIgnoreCase(principal.getRoleName())) {
+            if (principal.getSupplierId() == null) {
+                throw new com.guruge.hardware.exception.BusinessException(
+                        "Your login is not linked to a supplier account. Contact the administrator.");
+            }
+            effectiveId = principal.getSupplierId();
+        } else {
+            effectiveId = supplierId;
+        }
         return ResponseEntity.ok(ApiResponse.ok(reportService.supplierDashboard(effectiveId)));
     }
 
