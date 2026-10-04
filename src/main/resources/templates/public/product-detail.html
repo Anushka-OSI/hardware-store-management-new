@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/public-layout :: layout(~{::section}, 'Product — GURUGE HARDWARE')}">
+<section>
+<a href="/catalogue" class="text-sm text-slate-500 hover:text-orange-600">← Back to catalogue</a>
+<div id="detail" class="bg-white rounded-2xl shadow p-6 mt-3"><div class="text-slate-400">Loading...</div></div>
+<script th:inline="javascript">
+const PID = /*[[${productId}]]*/ 0;
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    const r=await App.get('/api/public/products/'+PID);
+    const p=r.data;
+    const out=(p.currentStock||0)<=0;
+    document.getElementById('detail').innerHTML=`
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-slate-100 rounded-xl overflow-hidden h-80">${App.img(p.imageUrl,p.name)}</div>
+        <div>
+          <div class="text-xs text-slate-500">${App.escapeHtml(p.brandName||'')} • SKU: ${App.escapeHtml(p.sku||'')}</div>
+          <h1 class="text-2xl font-extrabold mt-1">${App.escapeHtml(p.name)}</h1>
+          <div class="mt-2">${App.badge(out?'OUT_OF_STOCK':((p.currentStock||0)<=(p.minStockLevel||5)?'LOW_STOCK':'IN_STOCK'))}
+            <span class="text-sm text-slate-500 ml-2">Stock: ${p.currentStock??0} ${App.escapeHtml(p.unitName||'')}</span></div>
+          <div class="text-3xl font-extrabold text-orange-600 mt-3">${App.money(p.sellingPrice)}</div>
+          <div class="text-sm text-slate-500">Category: ${App.escapeHtml(p.categoryName||'-')}</div>
+          <div class="flex items-end gap-2 mt-4">
+            <button onclick="qtyCh(-1)" aria-label="Decrease quantity" class="w-9 h-9 bg-slate-100 rounded-lg text-xl">−</button>
+            <div><label for="qty" class="block text-xs font-medium mb-1 text-center">Qty</label><input id="qty" type="number" value="1" min="1" class="w-16 text-center border rounded-lg py-1.5"/></div>
+            <button onclick="qtyCh(1)" aria-label="Increase quantity" class="w-9 h-9 bg-slate-100 rounded-lg text-xl">+</button>
+            <button ${out?'disabled':''} onclick="addNow()" class="flex-1 py-2.5 rounded-lg font-bold ${out?'bg-slate-200 text-slate-400':'bg-orange-500 text-white hover:bg-orange-600'}">${out?'Out of Stock':'Add to Cart'}</button>
+          </div>
+          <div class="text-xs text-slate-500 mt-3">Bulk / contractor pricing available in store. Found it cheaper? Ask us in <a class="text-orange-600 underline" href="/request">Request</a>.</div>
+        </div>
+      </div>`;
+    window._P=p;
+  }catch(e){document.getElementById('detail').innerHTML='<div class="text-red-500">Product not found.</div>';}
+});
+function qtyCh(d){const el=document.getElementById('qty');el.value=Math.max(1,Number(el.value||1)+d);}
+function addNow(){const q=Number(document.getElementById('qty').value||1);const p=window._P;
+  Cart.add({id:p.id,name:p.name,sellingPrice:p.sellingPrice,imageUrl:p.imageUrl,currentStock:p.currentStock},q);}
+</script>
+</section>
+</html>

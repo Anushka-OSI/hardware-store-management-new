@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Stock Levels')}">
+<section><h1 class="text-xl font-extrabold">Stock Levels</h1>
+<div class="grid md:grid-cols-2 gap-4 mt-3">
+<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold text-amber-600">Low Stock (GET /api/products/low-stock)</h3><tbody></tbody><table class="w-full text-sm mt-2"><tbody id="low"></tbody></table></div>
+<div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold text-red-600">Out of Stock (GET /api/products/out-of-stock)</h3><table class="w-full text-sm mt-2"><tbody id="out"></tbody></table></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded',async()=>{
+try{const r=await App.get('/api/products/low-stock');
+document.getElementById('low').innerHTML=(r.data||[]).map(p=>`<tr class="border-t"><td class="py-2">${App.escapeHtml(p.name)}</td><td class="text-right font-bold">${p.currentStock}</td></tr>`).join('')||'<tr><td class="py-3 text-slate-400">None</td></tr>';}catch(e){}
+try{const r=await App.get('/api/products/out-of-stock');
+document.getElementById('out').innerHTML=(r.data||[]).map(p=>`<tr class="border-t"><td class="py-2">${App.escapeHtml(p.name)}</td><td class="text-right">${App.escapeHtml(p.sku||'')}</td></tr>`).join('')||'<tr><td class="py-3 text-slate-400">None</td></tr>';}catch(e){}
+});
+</script></section></html>

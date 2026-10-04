@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/public-layout :: layout(~{::section}, 'Home — GURUGE HARDWARE')}">
+<section>
+  <!-- Hero -->
+  <div class="bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-6">
+    <div class="flex-1">
+      <div class="text-orange-400 font-bold text-sm tracking-widest">TOOLS • BUILDING • ELECTRICAL • PLUMBING</div>
+      <h1 class="text-3xl md:text-5xl font-extrabold mt-2">Everything for your<br/>next build.</h1>
+      <p class="text-slate-300 mt-3">Genuine brands, fair prices, ready stock. Browse the catalogue or request a special item.</p>
+      <div class="flex gap-3 mt-5">
+        <a href="/catalogue" class="bg-orange-500 hover:bg-orange-600 px-6 py-2.5 rounded-lg font-bold">Shop Catalogue</a>
+        <a href="/request" class="bg-white/10 hover:bg-white/20 px-6 py-2.5 rounded-lg font-bold">Request Item</a>
+      </div>
+    </div>
+    <div class="text-7xl md:text-8xl">🧰</div>
+  </div>
+  <!-- Categories -->
+  <h2 class="text-xl font-extrabold mt-8 mb-3">Shop by Category</h2>
+  <div id="homeCats" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+  <!-- Featured -->
+  <h2 class="text-xl font-extrabold mt-8 mb-3">⭐ Featured Products</h2>
+  <div id="featured" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+  <!-- Popular -->
+  <h2 class="text-xl font-extrabold mt-8 mb-3">🔥 Popular Right Now</h2>
+  <div id="popular" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+<script>
+async function card(p){
+  const out=(p.currentStock||0)<=0;
+  return `<div class="bg-white rounded-xl shadow overflow-hidden flex flex-col">
+    <a href="/product/${p.id}" class="h-40 bg-slate-100 overflow-hidden">${App.img(p.imageUrl,p.name)}</a>
+    <div class="p-3"><a href="/product/${p.id}" class="font-semibold text-sm line-clamp-2 hover:text-orange-600">${App.escapeHtml(p.name)}</a>
+    <div class="font-extrabold text-orange-600 mt-1">${App.money(p.sellingPrice)}</div>
+    <button ${out?'disabled':''} onclick='Cart.add(${JSON.stringify({id:p.id,name:p.name,sellingPrice:p.sellingPrice,imageUrl:p.imageUrl,currentStock:p.currentStock})},1)'
+      class="mt-2 w-full text-sm py-2 rounded-lg ${out?'bg-slate-200 text-slate-400':'bg-orange-500 text-white hover:bg-orange-600'}">${out?'Out of stock':'Add to Cart'}</button></div></div>`;
+}
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    const c=await App.get('/api/public/categories');
+    document.getElementById('homeCats').innerHTML=(c.data||[]).slice(0,8).map(x=>
+      `<a href="/catalogue?categoryId=${x.id}" class="bg-white rounded-xl shadow p-4 hover:shadow-lg text-center"><div class="text-3xl">🗂️</div><div class="font-semibold text-sm mt-2">${App.escapeHtml(x.name)}</div></a>`).join('')||'<div class="text-slate-400">No categories</div>';
+  }catch(e){}
+  try{
+    const f=await App.get('/api/public/products/featured');
+    const cards=await Promise.all((f.data||[]).map(card));
+    document.getElementById('featured').innerHTML=cards.join('')||'<div class="text-slate-400">No featured products</div>';
+  }catch(e){document.getElementById('featured').innerHTML='<div class="text-red-400">Failed to load</div>';}
+  try{
+    const p=await App.get('/api/public/products/popular');
+    const cards=await Promise.all((p.data||[]).map(card));
+    document.getElementById('popular').innerHTML=cards.join('')||'<div class="text-slate-400">No popular products</div>';
+  }catch(e){}
+});
+</script>
+</section>
+</html>

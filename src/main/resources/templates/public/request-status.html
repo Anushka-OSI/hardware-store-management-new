@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/public-layout :: layout(~{::section}, 'Track Request — GURUGE HARDWARE')}">
+<section>
+<h1 class="text-2xl font-extrabold">Track Your Request</h1>
+<div class="bg-white rounded-xl shadow p-5 mt-4 max-w-xl">
+  <div class="grid md:grid-cols-2 gap-3">
+    <div><label class="text-sm font-medium">Request ID *</label><input id="tId" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="REQ-2026-..."/></div>
+    <div><label class="text-sm font-medium">Phone *</label><input id="tPhone" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="077 000 0000"/></div>
+  </div>
+  <button onclick="checkReq()" class="mt-3 bg-slate-900 text-white px-6 py-2.5 rounded-lg font-bold">Check Status</button>
+  <div id="tOut" class="mt-4"></div>
+</div>
+<script>
+async function checkReq(){
+  const rid=document.getElementById('tId').value.trim(),ph=document.getElementById('tPhone').value.trim();
+  if(!rid||!ph)return App.toast('Request ID and phone required','warn');
+  try{
+    const r=await App.get('/api/public/requests/check?requestId='+encodeURIComponent(rid)+'&phone='+encodeURIComponent(ph));
+    const d=r.data;
+    document.getElementById('tOut').innerHTML=`<div class="border rounded-xl p-4">
+      <div class="flex items-center gap-2"><b>${App.escapeHtml(d.requestId||'')}</b> ${App.badge(d.status)}</div>
+      <div class="text-sm mt-2"><b>Your message:</b> ${App.escapeHtml(d.message||'')}</div>
+      <div class="text-sm mt-2 bg-orange-50 border border-orange-200 rounded-lg p-3"><b>Store response:</b><br/>${App.escapeHtml(d.adminResponse||'No response yet — please check back soon.')}</div>
+      <div class="text-xs text-slate-500 mt-2">Updated: ${App.escapeHtml(d.updatedAt||d.createdAt||'')}</div></div>`;
+  }catch(e){document.getElementById('tOut').innerHTML='<div class="text-red-500 text-sm">Not found — check Request ID & phone.</div>';}
+}
+</script>
+</section>
+</html>

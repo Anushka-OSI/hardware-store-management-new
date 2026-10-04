@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Products')}">
+<section>
+<div class="flex items-center gap-2 flex-wrap">
+  <h1 class="text-xl font-extrabold">Products</h1>
+  <input id="kw" placeholder="Search SKU / name..." class="ml-auto border rounded-lg px-3 py-2 text-sm"/>
+  <select id="fAvail" class="border rounded-lg px-3 py-2 text-sm"><option value="">All</option><option value="IN_STOCK">In stock</option><option value="LOW_STOCK">Low</option><option value="OUT_OF_STOCK">Out</option></select>
+  <button onclick="loadP(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">Search</button>
+  <button onclick="pModal()" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Add</button>
+</div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto">
+<table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">SKU</th><th class="p-3 text-left">Name</th><th class="p-3 text-right">Price</th><th class="p-3 text-right">Stock</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Actions</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
+<script>
+let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadP(pg);}
+async function loadP(p=0){pg=p;
+  const kw=document.getElementById('kw').value,av=document.getElementById('fAvail').value;
+  try{const r=await App.get(`/api/products?keyword=${encodeURIComponent(kw)}&availability=${av}&page=${pg}&size=10`);
+    const{items,page}=App.unwrapPage(r.data);
+    document.getElementById('rows').innerHTML=items.map(x=>`<tr class="border-t">
+      <td class="p-3">${App.escapeHtml(x.sku||'')}</td><td class="p-3 font-medium">${App.escapeHtml(x.name)}</td>
+      <td class="p-3 text-right font-bold">${App.money(x.sellingPrice)}</td><td class="p-3 text-right">${x.currentStock??0}</td>
+      <td class="p-3">${App.badge(x.availabilityStatus||x.status)}</td>
+      <td class="p-3 flex gap-1"><button onclick='pModal(${JSON.stringify(x)})' class="px-2 py-1 bg-slate-100 rounded">Edit</button>
+      <button onclick="delP(${x.id})" class="px-2 py-1 bg-red-100 text-red-700 rounded">Delete</button></td></tr>`).join('')||'<tr><td colspan="6" class="p-4 text-center text-slate-400">No products</td></tr>';
+    if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages} • ${page.totalElements}`;
+  }catch(e){document.getElementById('rows').innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Load failed</td></tr>';}
+}
+function pModal(x){
+  const e=!!x;x=x||{};
+  App.openModal(`<h3 class="font-bold text-lg mb-3">${e?'Edit':'Add'} Product</h3><div class="grid grid-cols-2 gap-2 text-sm">
+    <input id="fSku" placeholder="SKU *" value="${App.escapeHtml(x.sku||'')}" class="border rounded px-3 py-2"/>
+    <input id="fName" placeholder="Name *" value="${App.escapeHtml(x.name||'')}" class="border rounded px-3 py-2 col-span-2"/>
+    <input id="fCat" type="number" placeholder="Category ID *" value="${x.categoryId||''}" class="border rounded px-3 py-2"/>
+    <input id="fUnit" type="number" placeholder="Unit ID *" value="${x.unitId||''}" class="border rounded px-3 py-2"/>
+    <input id="fBrand" type="number" placeholder="Brand ID" value="${x.brandId||''}" class="border rounded px-3 py-2"/>
+    <input id="fPrice" type="number" step="0.01" placeholder="Selling price *" value="${x.sellingPrice||''}" class="border rounded px-3 py-2"/>
+    <input id="fCost" type="number" step="0.01" placeholder="Cost price" value="${x.costPrice||''}" class="border rounded px-3 py-2"/>
+    <input id="fStock" type="number" placeholder="Stock" value="${x.currentStock||0}" class="border rounded px-3 py-2"/>
+    <input id="fMin" type="number" placeholder="Min level" value="${x.minStockLevel||5}" class="border rounded px-3 py-2"/>
+    <select id="fStatus" class="border rounded px-3 py-2"><option>ACTIVE</option><option>INACTIVE</option></select></div>
+    <div class="flex gap-2 mt-4"><button onclick="saveP(${e?x.id:'null'})" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Save</button>
+    <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
+}
+async function saveP(id){
+  const v=i=>((document.getElementById(i)||{}).value||'');
+  const b={sku:v('fSku'),name:v('fName'),categoryId:Number(v('fCat')),unitId:Number(v('fUnit')),brandId:v('fBrand')?Number(v('fBrand')):null,
+    sellingPrice:Number(v('fPrice')),costPrice:v('fCost')?Number(v('fCost')):0,currentStock:Number(v('fStock')||0),minStockLevel:Number(v('fMin')||0),status:v('fStatus')};
+  try{id?await App.put('/api/products/'+id,b):await App.post('/api/products',b);
+    App.toast('Saved','success');App.closeModal();loadP(pg);}catch(e){}
+}
+async function delP(id){if(!confirm('Delete product?'))return;try{await App.del('/api/products/'+id);App.toast('Deleted','success');loadP(pg);}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadP(0));
+</script>
+</section>
+</html>

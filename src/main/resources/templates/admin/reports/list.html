@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Reports')}">
+<section>
+<h1 class="text-xl font-extrabold">Reports</h1>
+<div class="bg-white rounded-xl shadow p-4 mt-3 flex flex-wrap gap-2 text-sm">
+  <input id="dFrom" type="date" class="border rounded-lg px-3 py-2"/><input id="dTo" type="date" class="border rounded-lg px-3 py-2"/>
+  <button onclick="loadR()" class="bg-slate-900 text-white px-4 py-2 rounded-lg">Load Sales</button>
+  <button onclick="loadInv()" class="bg-orange-500 text-white px-4 py-2 rounded-lg">Inventory Report</button>
+  <button onclick="loadPur()" class="bg-slate-700 text-white px-4 py-2 rounded-lg">Purchases</button>
+</div>
+<div class="grid md:grid-cols-3 gap-4 mt-4">
+  <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Sales Summary</h3><div id="salesBox" class="text-sm mt-2 text-slate-500">—</div><canvas id="chSales" class="mt-2"></canvas></div>
+  <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Inventory</h3><div id="invBox" class="text-sm mt-2 text-slate-500">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">Purchases</h3><div id="purBox" class="text-sm mt-2 text-slate-500">—</div></div>
+</div>
+<script>
+let ch=null;
+async function loadR(){
+  const f=document.getElementById('dFrom').value,t=document.getElementById('dTo').value;
+  try{const r=await App.get(`/api/reports/sales?dateFrom=${f}&dateTo=${t}&groupBy=day`);
+    const d=r.data||{};
+    document.getElementById('salesBox').innerHTML=`Orders: <b>${d.count??0}</b><br/>Revenue: <b>${App.money(d.revenue)}</b>`;
+    const g=d.grouped||{};const labels=Object.keys(g);
+    if(ch)ch.destroy();
+    ch=new Chart(document.getElementById('chSales'),{type:'bar',data:{labels,datasets:[{label:'Orders',data:labels.map(k=>g[k].length),backgroundColor:'#f97316'}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+  }catch(e){}
+}
+async function loadInv(){try{const r=await App.get('/api/reports/inventory');const d=r.data||{};
+  document.getElementById('invBox').innerHTML=`Products: <b>${d.totalProducts??0}</b><br/>Valuation: <b>${App.money(d.valuation)}</b><br/>Out of stock: <b>${d.outOfStockCount??0}</b>`;}catch(e){}}
+async function loadPur(){const f=document.getElementById('dFrom').value,t=document.getElementById('dTo').value;
+  try{const r=await App.get(`/api/reports/purchases?dateFrom=${f}&dateTo=${t}`);
+  document.getElementById('purBox').innerHTML=`POs: <b>${r.data.count??0}</b><br/>Total: <b>${App.money(r.data.total)}</b>`;}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>{loadR();loadInv();loadPur();});
+</script>
+</section>
+</html>

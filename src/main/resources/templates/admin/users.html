@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Users')}">
+<section>
+<div class="flex items-center gap-2">
+  <h1 class="text-xl font-extrabold">Users</h1>
+  <div class="ml-auto flex items-end gap-2"><div><label for="kw" class="block text-xs font-medium mb-1">Search Users</label><input id="kw" placeholder="Username / name / email..." class="border rounded-lg px-3 py-2 text-sm"/></div>
+  <button onclick="loadUsers(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">Search</button></div>
+  <button onclick="userModal()" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Add</button>
+</div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto">
+<table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">Username</th><th class="p-3 text-left">Name</th><th class="p-3 text-left">Role</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Actions</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
+<script>
+let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadUsers(pg);}
+async function loadUsers(p=0){pg=p;
+  const kw=document.getElementById('kw').value||'';
+  try{const r=await App.get(`/api/admin/users?keyword=${encodeURIComponent(kw)}&page=${pg}&size=10`);
+    const{items,page}=App.unwrapPage(r.data);
+    document.getElementById('rows').innerHTML=items.map(u=>`<tr class="border-t">
+      <td class="p-3 font-medium">${App.escapeHtml(u.username)}</td><td class="p-3">${App.escapeHtml(u.fullName||'')}</td>
+      <td class="p-3">${App.escapeHtml(u.roleName||u.role||'')}</td><td class="p-3">${App.badge(u.status)}</td>
+      <td class="p-3 flex gap-1"><button onclick='userModal(${JSON.stringify(u)})' class="px-2 py-1 bg-slate-100 rounded">Edit</button>
+      <button onclick="toggleUser(${u.id},'${u.status}')" class="px-2 py-1 ${u.status==='ACTIVE'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'} rounded">${u.status==='ACTIVE'?'Deactivate':'Activate'}</button></td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">No users</td></tr>';
+    if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages} • ${page.totalElements}`;
+  }catch(e){}
+}
+function userModal(u){
+  const isEdit=!!(u&&u.id);u=u||{};const curRole=u.roleName||u.role||'CASHIER';
+  const roles=['ADMIN','INVENTORY_MANAGER','CASHIER','SUPPLIER'].map(r=>`<option value="${r}"${r===curRole?' selected':''}>${r}</option>`).join('');
+  App.openModal(`<h3 class="font-bold text-lg mb-3">${isEdit?'Edit':'Add'} User</h3>
+    <div class="grid grid-cols-2 gap-3 text-sm">
+    ${isEdit?'':`<div><label for="mUsername" class="block font-medium mb-1">Username *</label><input id="mUsername" placeholder="e.g. cashier02" class="w-full border rounded px-3 py-2"/></div><div><label for="mPassword" class="block font-medium mb-1">Password *</label><input id="mPassword" type="password" placeholder="Min 6 characters" class="w-full border rounded px-3 py-2"/></div>`}
+    <div><label for="mFull" class="block font-medium mb-1">Full Name</label><input id="mFull" placeholder="Full name" value="${App.escapeHtml(u.fullName||'')}" class="w-full border rounded px-3 py-2"/></div>
+    <div><label for="mEmail" class="block font-medium mb-1">Email</label><input id="mEmail" placeholder="Email" value="${App.escapeHtml(u.email||'')}" class="w-full border rounded px-3 py-2"/></div>
+    <div><label for="mPhone" class="block font-medium mb-1">Phone</label><input id="mPhone" placeholder="Phone" value="${App.escapeHtml(u.phone||'')}" class="w-full border rounded px-3 py-2"/></div>
+    <div><label for="mRole" class="block font-medium mb-1">Role *</label><select id="mRole" class="w-full border rounded px-3 py-2">${roles}</select></div>
+    </div>
+    <div class="flex gap-2 mt-4"><button onclick="saveUser(${isEdit?u.id:'null'},'${curRole}')" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Save</button>
+    <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
+}
+async function saveUser(id,origRole){
+  try{
+    if(id){
+      await App.put('/api/admin/users/'+id,{fullName:val('mFull'),email:val('mEmail'),phone:val('mPhone')});
+      const newRole=val('mRole');
+      if(newRole&&newRole!==origRole){await App.patch('/api/admin/users/'+id+'/role',{roleName:newRole});}
+    }
+    else{await App.post('/api/admin/users',{username:val('mUsername'),password:val('mPassword'),fullName:val('mFull'),email:val('mEmail'),phone:val('mPhone'),roleName:val('mRole')});}
+    App.toast('Saved','success');App.closeModal();loadUsers(pg);
+  }catch(e){}
+  function val(i){return(document.getElementById(i)||{}).value||'';}
+}
+async function toggleUser(id,st){try{await App.patch('/api/admin/users/'+id+'/status',{status:st==='ACTIVE'?'INACTIVE':'ACTIVE'});App.toast('Status updated','success');loadUsers(pg);}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadUsers(0));
+</script>
+</section>
+</html>

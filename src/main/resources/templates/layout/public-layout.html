@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content, pageTitle)">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${pageTitle} ?: 'GURUGE HARDWARE'">GURUGE HARDWARE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{brand:{50:'#fff7ed',500:'#f97316',600:'#ea580c',700:'#c2410c'}}}}}</script>
+  <link rel="stylesheet" href="/css/custom.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+<!-- Header -->
+<header class="bg-slate-900 text-white sticky top-0 z-40 shadow">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-wide">
+      <span class="bg-orange-500 rounded-lg w-9 h-9 grid place-items-center text-slate-900 font-black">G</span>
+      <span>GURUGE <span class="text-orange-400">HARDWARE</span></span>
+    </a>
+    <div class="hidden md:flex flex-1 max-w-xl">
+      <input id="globalSearch" type="text" placeholder="Search tools, cement, paint, electrical..."
+        class="w-full rounded-l-lg px-4 py-2 text-slate-900 focus:outline-none"/>
+      <button onclick="globalSearchGo()" class="bg-orange-500 hover:bg-orange-600 px-4 rounded-r-lg font-semibold">Search</button>
+    </div>
+    <nav class="hidden md:flex items-center gap-5 text-sm font-medium ml-auto">
+      <a href="/" class="hover:text-orange-400">Home</a>
+      <a href="/catalogue" class="hover:text-orange-400">Catalogue</a>
+      <a href="/request" class="hover:text-orange-400">Request</a>
+      <a href="/request/status" class="hover:text-orange-400">Track</a>
+      <a href="/login" class="hover:text-orange-400">Login</a>
+      <a href="/cart" class="relative hover:text-orange-400">🛒 Cart
+        <span id="cartCount" class="absolute -top-2 -right-4 bg-orange-500 text-white text-xs rounded-full px-1.5">0</span>
+      </a>
+    </nav>
+    <a href="/catalogue" class="md:hidden ml-auto text-2xl">☰</a>
+  </div>
+  <div class="md:hidden px-4 pb-3 flex gap-2">
+    <a href="/" class="text-xs bg-slate-800 px-3 py-1.5 rounded">Home</a>
+    <a href="/catalogue" class="text-xs bg-slate-800 px-3 py-1.5 rounded">Catalogue</a>
+    <a href="/request" class="text-xs bg-slate-800 px-3 py-1.5 rounded">Request</a>
+    <a href="/request/status" class="text-xs bg-slate-800 px-3 py-1.5 rounded">Track</a>
+    <a href="/cart" class="text-xs bg-orange-500 px-3 py-1.5 rounded">Cart (<span id="cartCountM">0</span>)</a>
+  </div>
+</header>
+<main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
+  <div th:replace="${content}">Page content</div>
+</main>
+<footer class="bg-slate-900 text-slate-300 mt-8">
+  <div class="max-w-7xl mx-auto px-4 py-8 grid md:grid-cols-3 gap-6 text-sm">
+    <div><div class="font-bold text-white text-lg mb-2">GURUGE HARDWARE</div><p>Quality tools &amp; building materials at fair prices. Open Mon–Sat 8am–7pm.</p></div>
+    <div><div class="font-bold text-white mb-2">Quick Links</div><div class="flex flex-col gap-1"><a href="/" class="hover:text-orange-400">Home</a><a href="/catalogue" class="hover:text-orange-400">Catalogue</a><a href="/request" class="hover:text-orange-400">Request Item</a><a href="/request/status" class="hover:text-orange-400">Track Request</a></div></div>
+    <div><div class="font-bold text-white mb-2">Contact</div><p>📞 +94 77 000 0000<br/>✉️ info@gurugehardware.lk<br/>📍 Main Street, Colombo</p></div>
+  </div>
+  <div class="text-center text-xs py-3 border-t border-slate-700">© 2026 Guruge Hardware. All rights reserved.</div>
+</footer>
+<div id="toastWrap" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+<script src="/js/app.js"></script>
+<script src="/js/cart.js"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>{Cart.refreshBadge();});function globalSearchGo(){const q=document.getElementById('globalSearch').value||'';location.href='/catalogue?keyword='+encodeURIComponent(q);}</script>
+</body>
+</html>

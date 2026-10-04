@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Inventory Products')}">
+<section><h1 class="text-xl font-extrabold">Inventory — Products</h1>
+<div class="bg-white rounded-xl shadow p-4 mt-3 flex gap-2 text-sm"><input id="kw" placeholder="Search..." class="border rounded-lg px-3 py-2 flex-1"/><button onclick="loadP(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg">Search</button></div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">SKU</th><th class="p-3 text-left">Name</th><th class="p-3 text-right">Stock</th><th class="p-3 text-left">Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+<script>
+async function loadP(p=0){try{const r=await App.get(`/api/products?keyword=${encodeURIComponent(document.getElementById('kw').value||'')}&page=${p}&size=15`);
+const{items}=App.unwrapPage(r.data);
+document.getElementById('rows').innerHTML=items.map(x=>`<tr class="border-t"><td class="p-3">${App.escapeHtml(x.sku||'')}</td><td class="p-3 font-medium">${App.escapeHtml(x.name)}</td><td class="p-3 text-right font-bold">${x.currentStock??0}</td><td class="p-3">${App.badge(x.availabilityStatus||x.status)}</td></tr>`).join('');}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadP(0));
+</script></section></html>

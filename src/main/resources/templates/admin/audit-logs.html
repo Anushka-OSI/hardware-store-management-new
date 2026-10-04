@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Audit Logs')}">
+<section>
+<div class="flex items-center gap-2 flex-wrap"><h1 class="text-xl font-extrabold">Audit Logs</h1>
+<div class="ml-auto"><label for="fAct" class="block text-xs font-medium mb-1">Action</label><input id="fAct" placeholder="Action e.g. CREATE" class="border rounded-lg px-3 py-2 text-sm"/></div>
+<div><label for="fEnt" class="block text-xs font-medium mb-1">Entity</label><input id="fEnt" placeholder="Entity e.g. Product" class="border rounded-lg px-3 py-2 text-sm"/></div>
+<button onclick="loadA(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">Filter</button></div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm">
+<thead class="bg-slate-50"><tr><th class="p-3 text-left">Time</th><th class="p-3 text-left">User</th><th class="p-3 text-left">Action</th><th class="p-3 text-left">Entity</th><th class="p-3 text-left">Details</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
+<script>
+let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadA(pg);}
+async function loadA(p=0){pg=p;
+  try{const r=await App.get(`/api/audit-logs?action=${encodeURIComponent(document.getElementById('fAct').value||'')}&entityType=${encodeURIComponent(document.getElementById('fEnt').value||'')}&page=${pg}&size=20`);
+  const{items,page}=App.unwrapPage(r.data);
+  document.getElementById('rows').innerHTML=items.map(a=>`<tr class="border-t">
+    <td class="p-3 text-xs">${App.escapeHtml(a.createdAt||a.timestamp||'')}</td><td class="p-3">${App.escapeHtml(a.username||a.userId||'')}</td>
+    <td class="p-3">${App.badge(a.action||'')}</td><td class="p-3">${App.escapeHtml(a.entityType||'')} #${App.escapeHtml(a.entityId||'')}</td>
+    <td class="p-3 text-xs max-w-xs truncate" title="${App.escapeHtml('old: '+(a.oldValues||'')+' | new: '+(a.newValues||''))}">${App.escapeHtml(a.newValues||a.oldValues||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">No logs</td></tr>';
+  if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages} • ${page.totalElements}`;}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadA(0));
+</script>
+</section>
+</html>

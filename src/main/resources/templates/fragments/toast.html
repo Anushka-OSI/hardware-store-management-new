@@ -1,0 +1,6 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="toast">
+  <div id="toastWrap" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+  <script>
+  function toast(msg, type){ window.App ? App.toast(msg, type) : alert(msg); }
+  </script>
+</div>

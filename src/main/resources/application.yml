@@ -1,0 +1,318 @@
+spring:
+  application:
+    name: guruge-hardware-store
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import: optional:file:.env[.properties]
+
+  # ===========================================
+  # DATABASE CONFIGURATION
+  # ===========================================
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/hardware_management_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      connection-timeout: 20000
+      pool-name: GurugeHikariCP
+      leak-detection-threshold: 60000
+
+  # ===========================================
+  # JPA / HIBERNATE CONFIGURATION
+  # ===========================================
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+  # ===========================================
+  # FLYWAY MIGRATION
+  # ===========================================
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    baseline-description: "Initial baseline"
+    locations: classpath:db/migration
+    encoding: UTF-8
+    validate-on-migrate: true
+    out-of-order: false
+    table: flyway_schema_history
+    placeholder-replacement: true
+
+  # ===========================================
+  # THYMELEAF TEMPLATE ENGINE
+  # ===========================================
+  thymeleaf:
+    enabled: true
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    mode: HTML
+    cache: false
+    servlet:
+      content-type: text/html
+
+  # ===========================================
+  # WEB / MVC CONFIGURATION
+  # ===========================================
+  web:
+    resources:
+      static-locations: classpath:/static/
+      cache:
+        period: 3600
+
+  # ===========================================
+  # FILE UPLOAD CONFIGURATION
+  # ===========================================
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 10MB
+      file-size-threshold: 2MB
+      location: ${java.io.tmpdir}/uploads
+
+  # ===========================================
+  # EMAIL CONFIGURATION
+  # ===========================================
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    default-encoding: UTF-8
+
+  # ===========================================
+  # CACHE CONFIGURATION
+  # ===========================================
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=300s
+
+  # ===========================================
+  # ACTUATOR / MONITORING
+  # ===========================================
+  # management:
+  #   endpoints:
+  #     web:
+  #       exposure:
+  #         include: health,info,metrics,prometheus
+  #   endpoint:
+  #     health:
+  #       show-details: when-authorized
+
+# ===========================================
+# SERVER CONFIGURATION
+# ===========================================
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: false
+        same-site: lax
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  error:
+    include-stacktrace: never
+    include-message: always
+    include-binding-errors: always
+
+# ===========================================
+# LOGGING CONFIGURATION
+# ===========================================
+logging:
+  level:
+    root: INFO
+    com.guruge.hardware: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.flywaydb: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/guruge-hardware.log
+
+# ===========================================
+# APPLICATION SPECIFIC CONFIGURATION
+# ===========================================
+app:
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET:guruge-hardware-store-super-secret-key-change-in-production-min-256-bits}
+    expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days
+    token-prefix: "Bearer "
+    header-name: Authorization
+
+  # Security Configuration
+  security:
+    bcrypt-strength: 12
+    session-timeout: 1800
+    remember-me:
+      key: guruge-hardware-remember-me-key
+      validity: 1209600 # 14 days
+
+  # File Storage
+  storage:
+    location: ${FILE_STORAGE_PATH:./uploads}
+    product-images: product-images
+    max-file-size: 5242880 # 5MB
+    allowed-types: image/jpeg,image/png,image/webp,image/gif
+
+  # Pagination Defaults
+  pagination:
+    default-page-size: 20
+    max-page-size: 100
+
+  # Number Generators
+  numbering:
+    receipt-prefix: "INV"
+    po-prefix: "PO"
+    gr-prefix: "GR"
+    return-prefix: "RET"
+    request-prefix: "GRG-REQ"
+
+  # Business Rules
+  business:
+    low-stock-threshold-multiplier: 1.0
+    max-discount-percent: 100
+    min-order-quantity: 1
+    default-currency: LKR
+    tax-rate: 0.0
+
+  # Public Catalogue
+  catalogue:
+    featured-limit: 8
+    popular-limit: 12
+    products-per-page: 12
+    enable-cart: true
+    enable-requests: true
+
+  # POS Configuration
+  pos:
+    auto-calculate-change: true
+    print-receipt-on-complete: false
+    default-payment-method: CASH
+    allow-partial-payment: false
+
+  # Reports
+  reports:
+    default-date-range-days: 30
+    max-export-rows: 10000
+
+# ===========================================
+# PROFILE-SPECIFIC OVERRIDES
+# ===========================================
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  thymeleaf:
+    cache: false
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.guruge.hardware: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  thymeleaf:
+    cache: true
+  jpa:
+    show-sql: false
+  datasource:
+    hikari:
+      maximum-pool-size: 50
+
+logging:
+  level:
+    root: WARN
+    com.guruge.hardware: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+server:
+  compression:
+    enabled: true
+  error:
+    include-stacktrace: never
+
+app:
+  security:
+    session-timeout: 3600
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:tc:mysql:8.0:///hardware_management_system
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.guruge.hardware: DEBUG
+
+app:
+  jwt:
+    secret: test-secret-key-for-testing-only-min-256-bits-length
+    expiration: 3600000

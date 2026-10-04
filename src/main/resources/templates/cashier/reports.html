@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Cashier Reports')}">
+<section><h1 class="text-xl font-extrabold">My Reports</h1>
+<div class="bg-white rounded-xl shadow p-4 mt-3"><div id="box" class="text-sm">Loading...</div></div>
+<script>
+document.addEventListener('DOMContentLoaded',async()=>{try{const r=await App.get('/api/reports/dashboard/cashier');const d=r.data||{};
+document.getElementById('box').innerHTML=`Today: <b>${d.todayCount??0}</b> sales • <b>${App.money(d.todayRevenue)}</b>`;}catch(e){document.getElementById('box').textContent='Failed to load';}});
+</script></section></html>

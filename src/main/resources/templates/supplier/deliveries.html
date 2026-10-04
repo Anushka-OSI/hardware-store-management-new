@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Deliveries')}">
+<section><h1 class="text-xl font-extrabold">Deliveries (status=RECEIVED)</h1>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="p-3 text-left">PO #</th><th class="p-3 text-right">Total</th><th class="p-3 text-left">Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+<script>
+document.addEventListener('DOMContentLoaded',async()=>{try{const r=await App.get('/api/purchase-orders?status=RECEIVED&page=0&size=20');const{items}=App.unwrapPage(r.data);
+document.getElementById('rows').innerHTML=items.map(o=>`<tr class="border-t"><td class="p-3">${App.escapeHtml(o.poNumber||o.id)}</td><td class="p-3 text-right font-bold">${App.money(o.totalAmount)}</td><td class="p-3">${App.badge(o.status)}</td></tr>`).join('')||'<tr><td colspan="3" class="p-4 text-center text-slate-400">None</td></tr>';}catch(e){}});
+</script></section></html>

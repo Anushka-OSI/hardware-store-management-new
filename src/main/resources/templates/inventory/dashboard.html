@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Inventory Dashboard')}">
+<section>
+<h1 class="text-xl font-extrabold">Inventory Overview</h1>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Total Products</div><div id="iTotal" class="text-2xl font-extrabold">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Valuation</div><div id="iVal" class="text-2xl font-extrabold text-orange-600">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Low Stock Items</div><div id="iLow" class="text-2xl font-extrabold text-amber-600">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Out of Stock</div><div id="iOut" class="text-2xl font-extrabold text-red-600">—</div></div>
+</div>
+<div class="grid md:grid-cols-2 gap-4 mt-4">
+  <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold">⚠ Low-Stock Table</h3>
+    <table class="w-full text-sm mt-2"><thead class="bg-slate-50"><tr><th class="p-2 text-left">Product</th><th class="p-2 text-right">Stock</th><th class="p-2 text-right">Min</th></tr></thead><tbody id="lowRows"></tbody></table></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="flex items-center"><h3 class="font-bold">Recent Movements</h3>
+    <a href="/inventory/transactions" class="ml-auto text-sm text-orange-600 underline">View all</a></div>
+    <table class="w-full text-sm mt-2"><thead class="bg-slate-50"><tr><th class="p-2 text-left">Product</th><th class="p-2 text-left">Type</th><th class="p-2 text-right">Qty</th></tr></thead><tbody id="movRows"></tbody></table>
+    <div class="mt-4 border-t pt-3"><h4 class="font-bold text-sm">Quick Stock Adjust</h4>
+      <div class="grid gap-2 mt-2 text-sm"><div><label for="adjProd" class="block text-xs font-medium mb-1">Product *</label><select id="adjProd" class="w-full border rounded px-2 py-1.5"><option value="">Loading products...</option></select></div>
+      <div class="flex gap-2 items-end"><div><label for="adjQty" class="block text-xs font-medium mb-1">Qty (+/-) *</label><input id="adjQty" type="number" placeholder="+/- qty" class="border rounded px-2 py-1.5 w-28"/></div><div class="flex-1"><label for="adjReason" class="block text-xs font-medium mb-1">Reason *</label><input id="adjReason" placeholder="e.g. Damaged found in audit" class="border rounded px-2 py-1.5 w-full"/></div><button onclick="adjust()" class="bg-orange-500 text-white px-3 rounded-lg py-1.5">Apply</button></div></div>
+  </div>
+</div>
+<script>
+async function loadAdjProducts(){try{const r=await App.get('/api/products?page=0&size=500');const{items}=App.unwrapPage(r.data);
+  document.getElementById('adjProd').innerHTML='<option value="">Select a product...</option>'+(items||[]).map(p=>`<option value="${p.id}">${App.escapeHtml(p.name)} (${App.escapeHtml(p.sku||'')}) — stock: ${p.currentStock??0}</option>`).join('');}catch(e){document.getElementById('adjProd').innerHTML='<option value="">Failed to load products</option>';}}
+async function adjust(){
+  const pid=document.getElementById('adjProd').value;
+  if(!pid)return App.toast('Select a product','warn');
+  const q=Number(document.getElementById('adjQty').value||0);
+  if(!q)return App.toast('Enter a non-zero quantity','warn');
+  const reason=document.getElementById('adjReason').value||'';
+  if(!reason.trim())return App.toast('Reason is required','warn');
+  try{await App.post('/api/inventory/adjust',{productId:Number(pid),qtyChange:q,reason});App.toast('Adjusted','success');init();}catch(e){}}
+async function init(){
+  try{const r=await App.get('/api/reports/dashboard/inventory');const d=r.data||{};
+    document.getElementById('iTotal').textContent=d.totalProducts??'—';
+    document.getElementById('iVal').textContent=App.money(d.valuation);
+    document.getElementById('iLow').textContent=(d.lowStock||[]).length;
+    document.getElementById('iOut').textContent=d.outOfStockCount??0;
+    document.getElementById('lowRows').innerHTML=(d.lowStock||[]).slice(0,10).map(p=>`<tr class="border-t"><td class="p-2">${App.escapeHtml(p.name)}</td><td class="p-2 text-right font-bold text-amber-600">${p.currentStock}</td><td class="p-2 text-right">${p.minStockLevel??''}</td></tr>`).join('')||'<tr><td colspan="3" class="p-3 text-center text-slate-400">All good ✓</td></tr>';
+  }catch(e){}
+  try{const m=await App.get('/api/inventory/transactions?page=0&size=8');const{items}=App.unwrapPage(m.data);
+    document.getElementById('movRows').innerHTML=(items||[]).map(t=>{const pn=(t.product&&t.product.name)||t.productName||'';return `<tr class="border-t"><td class="p-2">${App.escapeHtml(pn)}</td><td class="p-2">${App.badge(t.movementType||t.type||'')}</td><td class="p-2 text-right">${t.quantity??t.qtyChange??''}</td></tr>`;}).join('')||'<tr><td colspan="3" class="p-3 text-center text-slate-400">No movements</td></tr>';}catch(e){}
+}
+document.addEventListener('DOMContentLoaded',()=>{init();loadAdjProducts();});
+</script>
+</section>
+</html>

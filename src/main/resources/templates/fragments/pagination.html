@@ -1,0 +1,16 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="pagination">
+  <div class="flex items-center gap-2 text-sm mt-4" id="paginationBar">
+    <button onclick="__pageGo(-1)" class="px-3 py-1.5 bg-white border rounded hover:bg-slate-50">← Prev</button>
+    <span id="pageInfo" class="text-slate-500">Page 1</span>
+    <button onclick="__pageGo(1)" class="px-3 py-1.5 bg-white border rounded hover:bg-slate-50">Next →</button>
+  </div>
+  <script>
+  let __pg = 0;
+  function __pageGo(d){ __pg = Math.max(0, __pg + d); if(window.loadPage) loadPage(__pg); }
+  function __pageRender(page){ if(!page) return; __pg = page.number || 0;
+    document.getElementById('pageInfo').textContent = 'Page ' + ((page.number||0)+1) + ' of ' + (page.totalPages||1) + ' • ' + (page.totalElements||0) + ' items'; }
+  </script>
+  <!-- Badge helpers (inline use): badges via App.badge(status) in JS; server-side examples:
+       <span class="badge-green">ACTIVE</span> <span class="badge-red">OUT OF STOCK</span>
+       <span class="badge-amber">LOW</span> <span class="badge-blue">NEW</span> <span class="badge-slate">DRAFT</span> -->
+</div>

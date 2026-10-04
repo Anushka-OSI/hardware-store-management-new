@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Admin Dashboard')}">
+<section>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Total Products</div><div id="stProducts" class="text-2xl font-extrabold">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Stock Value</div><div id="stStockVal" class="text-2xl font-extrabold text-orange-600">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Low Stock</div><div id="stLow" class="text-2xl font-extrabold text-amber-600">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Out of Stock</div><div id="stOut" class="text-2xl font-extrabold text-red-600">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Today Sales</div><div id="stTodaySales" class="text-2xl font-extrabold">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Today Revenue</div><div id="stTodayRev" class="text-2xl font-extrabold text-green-700">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Monthly Revenue</div><div id="stMonthRev" class="text-2xl font-extrabold text-green-700">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Pending POs / Requests</div><div class="text-2xl font-extrabold"><span id="stPO">—</span> / <span id="stReq">—</span></div></div>
+</div>
+<div class="grid md:grid-cols-3 gap-4 mt-4">
+  <div class="bg-white rounded-xl shadow p-4 md:col-span-2"><h3 class="font-bold mb-2">Daily Sales (7 days)</h3><canvas id="chDaily"></canvas></div>
+  <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold mb-2">Payments (month)</h3><canvas id="chPay"></canvas></div>
+</div>
+<div class="grid md:grid-cols-3 gap-4 mt-4">
+  <div class="bg-white rounded-xl shadow p-4 md:col-span-2"><h3 class="font-bold mb-2">Order Trend</h3><canvas id="chTrend"></canvas></div>
+  <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold mb-2">Top Products</h3>
+    <table class="w-full text-sm"><tbody id="topProducts"><tr><td class="py-4 text-center text-slate-400">Loading...</td></tr></tbody></table></div>
+</div>
+<script src="/js/dashboard.js"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>Dashboard.loadAdmin());</script>
+</section>
+</html>

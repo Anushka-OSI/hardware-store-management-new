@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/public-layout :: layout(~{::section}, 'Cart — GURUGE HARDWARE')}">
+<section>
+<h1 class="text-2xl font-extrabold">🛒 Your Cart</h1>
+<div class="grid md:grid-cols-3 gap-4 mt-4">
+  <div class="md:col-span-2 bg-white rounded-xl shadow p-4"><div id="cartList"></div></div>
+  <div class="bg-white rounded-xl shadow p-4 h-fit">
+    <h2 class="font-bold">Summary</h2>
+    <div id="cartSum" class="text-sm mt-2"></div>
+    <button onclick="clearCart()" class="w-full mt-3 bg-slate-100 py-2 rounded-lg text-sm">Clear cart</button>
+    <a href="/request" class="block text-center w-full mt-2 bg-orange-500 text-white py-2.5 rounded-lg font-bold hover:bg-orange-600">Checkout → Request Form</a>
+    <p class="text-xs text-slate-500 mt-2">Online checkout creates a store request — pay &amp; collect in store.</p>
+  </div>
+</div>
+<script>
+async function renderCart(){
+  const box=document.getElementById('cartList');
+  const items=Cart.all();
+  if(!items.length){box.innerHTML='<div class="text-center text-slate-400 py-10">Cart is empty. <a class="text-orange-600 underline" href="/catalogue">Browse catalogue</a></div>';}
+  else{
+    // live stock check via API per item (best-effort)
+    for(const it of items){
+      try{const r=await App.get('/api/public/products/'+it.id);it.stock=r.data.currentStock??it.stock;it.price=Number(r.data.sellingPrice??it.price);}catch(e){}
+    }
+    Cart.save(items);
+    box.innerHTML=items.map(i=>`
+      <div class="flex items-center gap-3 py-3 border-b">
+        <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden shrink-0">${App.img(i.image,i.name)}</div>
+        <div class="flex-1"><div class="font-semibold text-sm">${App.escapeHtml(i.name)}</div>
+          <div class="text-orange-600 font-bold text-sm">${App.money(i.price)}</div>
+          <div class="text-xs ${i.stock<=0?'text-red-500':'text-slate-500'}">${i.stock<=0?'Out of stock':('Stock: '+i.stock)}</div></div>
+        <button onclick="chQty(${i.id},-1)" class="w-8 h-8 bg-slate-100 rounded">−</button>
+        <span class="w-8 text-center font-bold">${i.qty}</span>
+        <button onclick="chQty(${i.id},1)" class="w-8 h-8 bg-slate-100 rounded">+</button>
+        <button onclick="rmItem(${i.id})" class="text-red-500">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('cartSum').innerHTML=`
+    <div class="flex justify-between"><span>Items</span><span>${Cart.count()}</span></div>
+    <div class="flex justify-between font-extrabold text-lg mt-1"><span>Total</span><span class="text-orange-600">${App.money(Cart.total())}</span></div>`;
+}
+function chQty(id,d){const it=Cart.all().find(x=>String(x.id)===String(id));if(!it)return;
+  const nq=it.qty+d;if(nq<=0)return Cart.remove(id);
+  if(nq>(it.stock??9999))return App.toast('Only '+it.stock+' in stock','warn');
+  Cart.update(id,nq);renderCart();}
+function rmItem(id){Cart.remove(id);renderCart();}
+function clearCart(){Cart.clear();renderCart();}
+document.addEventListener('DOMContentLoaded',renderCart);
+</script>
+</section>
+</html>

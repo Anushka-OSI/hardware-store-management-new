@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Supplier Dashboard')}">
+<section>
+<h1 class="text-xl font-extrabold">Supplier Dashboard</h1>
+<div class="grid grid-cols-3 gap-3 mt-3">
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Assigned POs</div><div id="sTotal" class="text-2xl font-extrabold">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Pending / Confirmed</div><div id="sPend" class="text-2xl font-extrabold text-amber-600">—</div></div>
+  <div class="bg-white rounded-xl shadow p-4"><div class="text-xs text-slate-500">Delivered</div><div id="sDel" class="text-2xl font-extrabold text-green-700">—</div></div>
+</div>
+<div class="bg-white rounded-xl shadow mt-4 p-4">
+  <div class="flex items-center gap-2"><h3 class="font-bold">PO History (GET /api/purchase-orders)</h3>
+  <select id="fSt" onchange="loadPO()" class="ml-auto border rounded-lg px-3 py-1.5 text-sm"><option value="">All</option><option>SENT</option><option>CONFIRMED</option><option>RECEIVED</option></select></div>
+  <table class="w-full text-sm mt-2"><thead class="bg-slate-50"><tr><th class="p-2 text-left">PO #</th><th class="p-2 text-right">Total</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Action</th></tr></thead><tbody id="rows"></tbody></table>
+</div>
+<script>
+async function init(){try{const r=await App.get('/api/reports/dashboard/supplier');const d=r.data||{};
+  document.getElementById('sTotal').textContent=d.total??0;
+  document.getElementById('sPend').textContent=d.pending??0;
+  document.getElementById('sDel').textContent=d.delivered??0;}catch(e){}}
+async function loadPO(){try{const st=document.getElementById('fSt').value;
+  const r=await App.get(`/api/purchase-orders?status=${st}&page=0&size=20`);const{items}=App.unwrapPage(r.data);
+  document.getElementById('rows').innerHTML=items.map(o=>`<tr class="border-t"><td class="p-2 font-medium">${App.escapeHtml(o.poNumber||o.id)}</td>
+  <td class="p-2 text-right font-bold">${App.money(o.totalAmount)}</td><td class="p-2">${App.badge(o.status)}</td>
+  <td class="p-2">${o.status==='SENT'?`<button onclick="confirmPO(${o.id})" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Confirm</button>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="p-3 text-center text-slate-400">None</td></tr>';}catch(e){}}
+async function confirmPO(id){try{await App.patch('/api/purchase-orders/'+id+'/confirm',{});App.toast('Confirmed','success');loadPO();init();}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>{init();loadPO();});
+</script>
+</section>
+</html>

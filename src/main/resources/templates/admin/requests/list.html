@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Customer Requests')}">
+<section>
+<div class="flex items-center gap-2 flex-wrap"><h1 class="text-xl font-extrabold">Customer Requests</h1>
+<select id="fSt" class="ml-auto border rounded-lg px-3 py-2 text-sm"><option value="">All</option><option>NEW</option><option>IN_PROGRESS</option><option>RESPONDED</option><option>CLOSED</option></select>
+<input id="kw" placeholder="Search..." class="border rounded-lg px-3 py-2 text-sm"/>
+<button onclick="loadR(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">Filter</button></div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm">
+<thead class="bg-slate-50"><tr><th class="p-3 text-left">Request ID</th><th class="p-3 text-left">Customer</th><th class="p-3 text-left">Message</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Action</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
+<script>
+let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadR(pg);}
+async function loadR(p=0){pg=p;
+  try{const r=await App.get(`/api/requests?status=${document.getElementById('fSt').value}&keyword=${encodeURIComponent(document.getElementById('kw').value||'')}&page=${pg}&size=10`);
+  const{items,page}=App.unwrapPage(r.data);
+  document.getElementById('rows').innerHTML=items.map(x=>`<tr class="border-t">
+    <td class="p-3 font-medium">${App.escapeHtml(x.requestId||x.id)}</td>
+    <td class="p-3">${App.escapeHtml(x.customerName||'')} <span class="text-xs text-slate-500">${App.escapeHtml(x.phone||'')}</span></td>
+    <td class="p-3 max-w-xs truncate">${App.escapeHtml(x.message||'')}</td><td class="p-3">${App.badge(x.status)}</td>
+    <td class="p-3"><button onclick='respond(${x.id},"${App.escapeHtml(x.status||'')}")' class="px-2 py-1 bg-orange-100 text-orange-700 rounded">Respond</button></td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">None</td></tr>';
+  if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages}`;}catch(e){}}
+function respond(id,st){
+  App.openModal(`<h3 class="font-bold mb-3">Respond to Request</h3>
+  <select id="rSt" class="w-full border rounded px-3 py-2 text-sm"><option>IN_PROGRESS</option><option>RESPONDED</option><option>CLOSED</option></select>
+  <textarea id="rMsg" rows="4" placeholder="Response to customer..." class="w-full border rounded px-3 py-2 text-sm mt-2"></textarea>
+  <div class="flex gap-2 mt-3"><button onclick="sendR(${id})" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Send</button>
+  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
+}
+async function sendR(id){try{await App.patch('/api/requests/'+id+'/respond',{status:document.getElementById('rSt').value,adminResponse:document.getElementById('rMsg').value});
+  App.toast('Response recorded','success');App.closeModal();loadR(pg);}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadR(0));
+</script>
+</section>
+</html>

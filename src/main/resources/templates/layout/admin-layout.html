@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content, pageTitle)">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${pageTitle} ?: 'Admin — GURUGE HARDWARE'">Admin — GURUGE HARDWARE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{brand:{500:'#f97316',600:'#ea580c'}}}}}</script>
+  <link rel="stylesheet" href="/css/custom.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800">
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="w-60 bg-slate-900 text-slate-200 hidden md:flex flex-col fixed inset-y-0 z-30">
+    <a href="/admin/dashboard" class="flex items-center gap-2 px-5 py-4 font-extrabold text-lg border-b border-slate-700">
+      <span class="bg-orange-500 rounded-lg w-8 h-8 grid place-items-center text-slate-900">G</span>
+      <span>GURUGE <span class="text-orange-400 text-sm">ADMIN</span></span>
+    </a>
+    <nav class="flex-1 overflow-y-auto p-3 text-sm space-y-1" id="adminNav">
+      <a data-nav="admin-dashboard" href="/admin/dashboard" class="navlink">📊 Dashboard</a>
+      <a data-nav="admin-users" href="/admin/users" class="navlink">👥 Users</a>
+      <a data-nav="admin-products" href="/admin/products" class="navlink">🧰 Products</a>
+      <a data-nav="admin-categories" href="/admin/categories" class="navlink">🗂️ Categories</a>
+      <a data-nav="inventory-dashboard" href="/inventory/dashboard" class="navlink">📦 Inventory</a>
+      <a data-nav="admin-suppliers" href="/admin/suppliers" class="navlink">🚚 Suppliers</a>
+      <a data-nav="admin-purchases" href="/admin/purchases" class="navlink">🧾 Purchases</a>
+      <a data-nav="admin-sales" href="/admin/sales" class="navlink">💰 Sales</a>
+      <a data-nav="cashier-dashboard" href="/cashier/dashboard" class="navlink">🧮 Cashier</a>
+      <a data-nav="pos" href="/cashier/pos" class="navlink">⚡ POS</a>
+      <a data-nav="admin-reports" href="/admin/reports" class="navlink">📈 Reports</a>
+      <a data-nav="admin-requests" href="/admin/requests" class="navlink">✉️ Requests</a>
+      <a data-nav="admin-audit-logs" href="/admin/audit-logs" class="navlink">📜 Audit Logs</a>
+      <a data-nav="supplier-dashboard" href="/supplier/dashboard" class="navlink">🏭 Supplier Portal</a>
+    </nav>
+    <div class="p-3 border-t border-slate-700 text-xs text-slate-400">© 2026 Guruge Hardware</div>
+  </aside>
+  <div class="flex-1 md:ml-60 flex flex-col min-h-screen">
+    <!-- Topbar -->
+    <header class="bg-white shadow sticky top-0 z-20 px-4 py-3 flex items-center gap-3">
+      <span class="md:hidden font-extrabold">GURUGE <span class="text-orange-500">ADMIN</span></span>
+      <span class="font-semibold hidden md:block" th:text="${pageTitle} ?: 'Dashboard'">Dashboard</span>
+      <span id="pageKey" th:text="${page}" class="hidden"></span>
+      <div class="ml-auto flex items-center gap-3 text-sm">
+        <span class="text-slate-500 hidden sm:inline">Staff Portal</span>
+        <a href="/" class="px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200">🏠 Store</a>
+        <form th:action="@{/logout}" method="post" class="inline"><input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/><button class="px-3 py-1.5 rounded bg-orange-500 text-white hover:bg-orange-600">Logout</button></form>
+      </div>
+    </header>
+    <main class="p-4 md:p-6 flex-1">
+      <div th:replace="${content}">Admin content</div>
+    </main>
+  </div>
+</div>
+<div id="toastWrap" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+<div id="modalWrap"></div>
+<script src="/js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  const key=(document.getElementById('pageKey')||{}).textContent||'';
+  document.querySelectorAll('.navlink').forEach(a=>{
+    a.className='navlink block px-3 py-2 rounded hover:bg-slate-800';
+    if(a.dataset.nav===key.trim()) a.classList.add('bg-orange-500','text-white','font-semibold');
+  });
+});
+</script>
+</body>
+</html>

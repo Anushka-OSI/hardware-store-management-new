@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Returns')}">
+<section><h1 class="text-xl font-extrabold">Returns & Refunds</h1>
+<div class="bg-white rounded-xl shadow p-4 mt-3">
+  <div class="flex flex-wrap gap-3 text-sm items-end">
+    <div><label for="saleId" class="block text-xs font-medium mb-1">Sale ID *</label><input id="saleId" type="number" placeholder="e.g. 5" class="border rounded px-3 py-2 w-32"/></div>
+    <div><label for="retReason" class="block text-xs font-medium mb-1">Return Reason</label><input id="retReason" placeholder="e.g. Damaged item" class="border rounded px-3 py-2 flex-1"/></div>
+    <button onclick="loadSale()" class="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold">Load Sale Items</button>
+  </div>
+  <div id="saleItems" class="mt-3"></div>
+</div>
+<div class="bg-white rounded-xl shadow p-4 mt-4">
+  <h3 class="font-bold">Recent Returns</h3>
+  <table class="w-full text-sm mt-2"><thead class="bg-slate-50"><tr><th class="p-2 text-left">Return #</th><th class="p-2 text-left">Sale</th><th class="p-2 text-right">Refund</th><th class="p-2 text-left">Status</th></tr></thead><tbody id="retRows"></tbody></table>
+</div>
+<script>
+let _items=[];
+async function loadSale(){
+  const id=document.getElementById('saleId').value;
+  if(!id)return App.toast('Enter a Sale ID','warn');
+  try{
+    const r=await App.get('/api/sales/'+id);const s=r.data||{};_items=s.items||[];
+    if(!_items.length){document.getElementById('saleItems').innerHTML='<div class="text-slate-400 text-sm">No items on this sale.</div>';return;}
+    document.getElementById('saleItems').innerHTML=`<table class="w-full text-sm mt-1"><thead class="bg-slate-50"><tr><th class="p-2 text-left">Item</th><th class="p-2 text-right">Sold</th><th class="p-2 text-right">Unit Price</th><th class="p-2 text-left"><label class="font-medium">Return Qty</label></th><th class="p-2 text-left"><label class="font-medium">Condition</label></th></tr></thead><tbody>`+
+      _items.map(it=>`<tr class="border-t"><td class="p-2">${App.escapeHtml(it.productName||'')}</td><td class="p-2 text-right">${it.quantity}</td><td class="p-2 text-right">${App.money(it.unitPrice)}</td>
+      <td class="p-2"><input id="rq_${it.id}" type="number" min="0" max="${it.quantity}" value="0" class="border rounded px-2 py-1.5 w-20"/></td>
+      <td class="p-2"><select id="cd_${it.id}" class="border rounded px-2 py-1.5"><option value="GOOD">GOOD (restock)</option><option value="DAMAGED">DAMAGED</option><option value="DEFECTIVE">DEFECTIVE</option></select></td></tr>`).join('')+
+      `</tbody></table><button onclick="doReturn(${s.id})" class="mt-3 bg-orange-500 text-white px-5 py-2 rounded-lg font-bold">Process Return</button>`;
+  }catch(e){document.getElementById('saleItems').innerHTML='<div class="text-red-500 text-sm">Sale not found.</div>';}
+}
+async function doReturn(saleId){
+  const items=_items.map(it=>({saleItemId:it.id,returnedQty:Number((document.getElementById('rq_'+it.id)||{}).value||0),itemCondition:(document.getElementById('cd_'+it.id)||{}).value||'GOOD',restocked:((document.getElementById('cd_'+it.id)||{}).value||'GOOD')==='GOOD',reason:document.getElementById('retReason').value||''}))
+    .filter(x=>x.returnedQty>0);
+  if(!items.length)return App.toast('Enter a return quantity','warn');
+  try{
+    const r=await App.post('/api/returns',{saleId,items,reason:document.getElementById('retReason').value||'Customer return'});
+    App.toast('Return processed — refund Rs. '+Number(r.data.totalRefund||0).toFixed(2),'success');
+    document.getElementById('saleItems').innerHTML='';loadRets();
+  }catch(e){}
+}
+async function loadRets(){
+  try{const r=await App.get('/api/returns?page=0&size=10');const{items}=App.unwrapPage(r.data);
+  document.getElementById('retRows').innerHTML=(items||[]).map(x=>`<tr class="border-t"><td class="p-2 font-medium">${App.escapeHtml(x.returnNumber||x.id)}</td><td class="p-2">${x.sale?x.sale.receiptNumber:(x.saleId||'')}</td><td class="p-2 text-right font-bold">${App.money(x.totalRefund)}</td><td class="p-2">${App.badge(x.status)}</td></tr>`).join('')||'<tr><td colspan="4" class="p-3 text-center text-slate-400">No returns yet</td></tr>';}catch(e){}
+}
+document.addEventListener('DOMContentLoaded',loadRets);
+</script></section></html>

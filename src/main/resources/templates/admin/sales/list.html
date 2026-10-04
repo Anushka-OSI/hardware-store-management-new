@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Sales')}">
+<section>
+<div class="flex items-center gap-2 flex-wrap"><h1 class="text-xl font-extrabold">Sales</h1>
+<input id="fRec" placeholder="Receipt #" class="ml-auto border rounded-lg px-3 py-2 text-sm"/>
+<select id="fPay" class="border rounded-lg px-3 py-2 text-sm"><option value="">All payments</option><option>CASH</option><option>CARD</option><option>DIGITAL</option></select>
+<button onclick="loadS(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">Filter</button>
+<a href="/cashier/pos" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">⚡ Open POS</a></div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm">
+<thead class="bg-slate-50"><tr><th class="p-3 text-left">Receipt</th><th class="p-3 text-right">Total</th><th class="p-3 text-left">Payment</th><th class="p-3 text-left">Date</th><th class="p-3 text-left">Actions</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
+<script>
+let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadS(pg);}
+async function loadS(p=0){pg=p;
+  try{const r=await App.get(`/api/sales?receipt=${encodeURIComponent(document.getElementById('fRec').value||'')}&paymentMethod=${document.getElementById('fPay').value}&page=${pg}&size=10`);
+  const{items,page}=App.unwrapPage(r.data);
+  document.getElementById('rows').innerHTML=items.map(s=>`<tr class="border-t">
+    <td class="p-3 font-medium">${App.escapeHtml(s.receiptNumber||s.id)}</td><td class="p-3 text-right font-bold">${App.money(s.totalAmount)}</td>
+    <td class="p-3">${App.badge(s.paymentMethod||'CASH')}</td><td class="p-3 text-xs">${App.escapeHtml(s.createdAt||'')}</td>
+    <td class="p-3"><button onclick="detail(${s.id})" class="px-2 py-1 bg-slate-100 rounded">Receipt</button></td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">No sales</td></tr>';
+  if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages}`;}catch(e){}}
+async function detail(id){try{const r=await App.get('/api/sales/'+id+'/receipt');
+  const d=r.data||{};
+  App.openModal(`<div id="receiptPrint"><div class="text-center font-extrabold">GURUGE HARDWARE</div>
+  <div class="text-center text-xs text-slate-500">Receipt #${App.escapeHtml(d.receiptNumber||id)}</div>
+  <pre class="text-xs bg-slate-50 p-3 rounded mt-2 overflow-auto">${App.escapeHtml(JSON.stringify(d,null,2))}</pre>
+  <div class="flex gap-2 mt-3 no-print"><button onclick="window.print()" class="flex-1 bg-slate-900 text-white py-2 rounded-lg">Print</button>
+  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Close</button></div></div>`);}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadS(0));
+</script>
+</section>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/admin-layout :: layout(~{::section}, 'Purchase Orders')}">
+<section>
+<div class="flex items-center gap-2 flex-wrap"><h1 class="text-xl font-extrabold">Purchase Orders</h1>
+<div class="ml-auto"><label for="fSt" class="block text-xs font-medium mb-1">Order Status</label><select id="fSt" class="border rounded-lg px-3 py-2 text-sm"><option value="">All statuses</option><option>DRAFT</option><option>SENT</option><option>CONFIRMED</option><option>PARTIALLY_RECEIVED</option><option>RECEIVED</option><option>CANCELLED</option></select></div>
+<button onclick="loadPO(0)" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">Filter</button>
+<button onclick="poModal()" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ New PO</button></div>
+<div class="bg-white rounded-xl shadow mt-3 overflow-x-auto"><table class="w-full text-sm">
+<thead class="bg-slate-50"><tr><th class="p-3 text-left">PO #</th><th class="p-3 text-left">Supplier</th><th class="p-3 text-right">Total</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Actions</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<div class="flex gap-2 mt-3 text-sm"><button onclick="pgGo(-1)" class="px-3 py-1.5 bg-white border rounded">← Prev</button><span id="pageInfo" class="text-slate-500"></span><button onclick="pgGo(1)" class="px-3 py-1.5 bg-white border rounded">Next →</button></div>
+<script>
+let pg=0;function pgGo(d){pg=Math.max(0,pg+d);loadPO(pg);}
+async function loadPO(p=0){pg=p;const st=document.getElementById('fSt').value;
+  try{const r=await App.get(`/api/purchase-orders?status=${st}&page=${pg}&size=10`);
+  const{items,page}=App.unwrapPage(r.data);
+  document.getElementById('rows').innerHTML=items.map(o=>`<tr class="border-t">
+    <td class="p-3 font-medium">${App.escapeHtml(o.poNumber||o.id)}</td><td class="p-3">${App.escapeHtml(o.supplierName||o.supplierId||'')}</td>
+    <td class="p-3 text-right font-bold">${App.money(o.totalAmount)}</td><td class="p-3">${App.badge(o.status)}</td>
+    <td class="p-3 flex gap-1 flex-wrap">
+      <button onclick="detail(${o.id})" class="px-2 py-1 bg-slate-100 rounded">View</button>
+      ${o.status==='DRAFT'?`<button onclick="act(${o.id},'send')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded">Send</button>`:''}
+      ${o.status==='SENT'?`<button onclick="act(${o.id},'confirm')" class="px-2 py-1 bg-green-100 text-green-700 rounded">Confirm</button>`:''}
+      ${['SENT','CONFIRMED','PARTIALLY_RECEIVED'].includes(o.status)?`<button onclick="recvModal(${o.id})" class="px-2 py-1 bg-green-100 text-green-700 rounded">Receive</button>`:''}
+      ${['DRAFT','SENT','CONFIRMED'].includes(o.status)?`<button onclick="act(${o.id},'cancel')" class="px-2 py-1 bg-red-100 text-red-700 rounded">Cancel</button>`:''}
+    </td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-center text-slate-400">No orders</td></tr>';
+  if(page)document.getElementById('pageInfo').textContent=`Page ${page.number+1} of ${page.totalPages}`;}catch(e){}}
+async function poModal(){
+  let sups=[],prods=[];
+  try{const r=await App.get('/api/suppliers?page=0&size=100');sups=App.unwrapPage(r.data).items||[];}catch(_){}
+  try{const r=await App.get('/api/products?page=0&size=200');prods=App.unwrapPage(r.data).items||[];}catch(_){}
+  const supOpts=sups.map(s=>`<option value="${s.id}">${App.escapeHtml(s.companyName||('Supplier #'+s.id))}</option>`).join('')||'<option value="">No suppliers found</option>';
+  const prodOpts=prods.map(p=>`<option value="${p.id}" data-cost="${p.costPrice??0}">${App.escapeHtml(p.name)} (${App.escapeHtml(p.sku||'')})</option>`).join('')||'<option value="">No products found</option>';
+  window._poItems=[{prod:'',qty:10,price:''}];
+  App.openModal(`<h3 class="font-bold mb-3">New Purchase Order</h3><div class="grid gap-3 text-sm">
+  <div><label for="poSup" class="block font-medium mb-1">Supplier *</label><select id="poSup" class="w-full border rounded px-3 py-2">${supOpts}</select></div>
+  <div><label class="block font-medium mb-1">Items *</label><div id="poItemRows" class="grid gap-2"></div>
+  <button onclick="poAddItem()" class="text-orange-600 text-sm font-semibold hover:underline">+ Add another item</button></div>
+  <div><label for="poNotes" class="block font-medium mb-1">Notes</label><input id="poNotes" placeholder="Notes (optional)" class="w-full border rounded px-3 py-2"/></div></div>
+  <div class="flex gap-2 mt-3"><button onclick="savePO()" class="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold">Create PO</button>
+  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);
+  window._poProdOpts=prodOpts;
+  poRenderItems();
+}
+function poRenderItems(){
+  const wrap=document.getElementById('poItemRows');if(!wrap)return;
+  wrap.innerHTML=window._poItems.map((it,idx)=>`<div class="grid grid-cols-12 gap-2 items-end border rounded-lg p-2">
+    <div class="col-span-6"><label for="poP_${idx}" class="block text-xs font-medium mb-1">Product</label><select id="poP_${idx}" onchange="poSyncCost(${idx})" class="w-full border rounded px-2 py-1.5">${window._poProdOpts}</select></div>
+    <div class="col-span-2"><label for="poQ_${idx}" class="block text-xs font-medium mb-1">Qty</label><input id="poQ_${idx}" type="number" min="1" value="${it.qty}" class="w-full border rounded px-2 py-1.5"/></div>
+    <div class="col-span-3"><label for="poC_${idx}" class="block text-xs font-medium mb-1">Unit Cost</label><input id="poC_${idx}" type="number" step="0.01" min="0" value="${it.price}" placeholder="0.00" class="w-full border rounded px-2 py-1.5"/></div>
+    <div class="col-span-1"><button onclick="poRmItem(${idx})" class="text-red-500 px-1 text-lg" title="Remove">✕</button></div></div>`).join('');
+  window._poItems.forEach((it,idx)=>{
+    const s=document.getElementById('poP_'+idx);
+    if(s){if(it.prod)s.value=it.prod;const o=s.selectedOptions[0];const c=document.getElementById('poC_'+idx);if(c&&!c.value&&o)c.value=o.dataset.cost||'';}
+  });
+}
+function poSyncCost(idx){const s=document.getElementById('poP_'+idx);const c=document.getElementById('poC_'+idx);if(s&&c&&s.selectedOptions[0])c.value=s.selectedOptions[0].dataset.cost||'';}
+function poAddItem(){window._poItems.push({prod:'',qty:10,price:''});poRenderItems();}
+function poRmItem(idx){if(window._poItems.length<=1)return App.toast('At least one item is required','warn');window._poItems.splice(idx,1);poRenderItems();}
+async function savePO(){const v=i=>(document.getElementById(i)||{}).value||'';
+  if(!v('poSup'))return App.toast('Select a supplier','warn');
+  const items=window._poItems.map((_,idx)=>({productId:Number((document.getElementById('poP_'+idx)||{}).value||0),orderedQty:Number((document.getElementById('poQ_'+idx)||{}).value||0),unitCost:Number((document.getElementById('poC_'+idx)||{}).value||0)}));
+  if(items.some(x=>!x.productId))return App.toast('Select a product for every row','warn');
+  if(items.some(x=>x.orderedQty<1))return App.toast('Quantity must be at least 1','warn');
+  const b={supplierId:Number(v('poSup')),notes:v('poNotes'),items};
+  try{await App.post('/api/purchase-orders',b);App.toast('PO created','success');App.closeModal();loadPO(pg);}catch(e){}}
+async function detail(id){try{const r=await App.get('/api/purchase-orders/'+id);const o=r.data||{};
+  const rows=(o.items||[]).map(it=>`<tr class="border-t"><td class="p-2">${App.escapeHtml(it.product?it.product.name:(it.productId||''))}</td>
+    <td class="p-2 text-right">ord ${it.orderedQty??0} / recv ${it.receivedQty??0} / dmg ${it.damagedQty??0}</td>
+    <td class="p-2 text-right font-semibold">${App.money(it.totalCost)}</td></tr>`).join('');
+  App.openModal(`<h3 class="font-bold mb-1">PO ${App.escapeHtml(o.poNumber||id)}</h3>
+  <div class="text-xs text-slate-500 mb-2">${App.escapeHtml(o.status||'')} • Total ${App.money(o.totalAmount)}</div>
+  <table class="w-full text-sm"><tbody>${rows||'<tr><td class="p-3 text-center text-slate-400">No items</td></tr>'}</tbody></table>
+  <button onclick="App.closeModal()" class="mt-3 w-full bg-slate-100 py-2 rounded-lg">Close</button>`);}catch(e){}}
+async function recvModal(id){try{const r=await App.get('/api/purchase-orders/'+id);const o=r.data||{};
+  const rows=(o.items||[]).map(it=>{const rem=(it.orderedQty||0)-(it.receivedQty||0);
+    return `<div class="grid grid-cols-3 gap-2 items-end text-sm border rounded-lg p-2">
+    <div class="col-span-1 font-medium truncate">${App.escapeHtml(it.product?it.product.name:('Item #'+it.id))}<div class="text-xs text-slate-500">Remaining: ${rem}</div></div>
+    <div><label for="rv_${it.id}" class="block text-xs font-medium mb-1">Received</label><input id="rv_${it.id}" type="number" min="0" max="${rem}" value="${rem}" class="w-full border rounded px-2 py-1.5" placeholder="Received"/></div>
+    <div><label for="dg_${it.id}" class="block text-xs font-medium mb-1">Damaged</label><input id="dg_${it.id}" type="number" min="0" value="0" class="w-full border rounded px-2 py-1.5" placeholder="Damaged"/></div></div>`;
+  }).join('');
+  App.openModal(`<h3 class="font-bold mb-2">Receive Goods — ${App.escapeHtml(o.poNumber||id)}</h3>
+  <div class="grid gap-2 max-h-80 overflow-y-auto">${rows||'<div class="text-slate-400 text-sm">No items</div>'}</div>
+  <input id="rvNotes" placeholder="Delivery notes (optional)" class="w-full border rounded px-3 py-2 text-sm mt-2"/>
+  <div class="flex gap-2 mt-3"><button onclick="saveRecv(${id})" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold">Confirm Receipt</button>
+  <button onclick="App.closeModal()" class="flex-1 bg-slate-100 py-2 rounded-lg">Cancel</button></div>`);}catch(e){}}
+async function saveRecv(id){try{const r=await App.get('/api/purchase-orders/'+id);const o=r.data||{};
+  const items=(o.items||[]).map(it=>({purchaseOrderItemId:it.id,receivedQty:Number((document.getElementById('rv_'+it.id)||{}).value||0),damagedQty:Number((document.getElementById('dg_'+it.id)||{}).value||0)}))
+    .filter(x=>x.receivedQty>0);
+  if(!items.length)return App.toast('Enter a received quantity','warn');
+  await App.post('/api/purchase-orders/'+id+'/receive',{items,notes:(document.getElementById('rvNotes')||{}).value||''});
+  App.toast('Goods received — stock updated','success');App.closeModal();loadPO(pg);}catch(e){}}
+async function act(id,a){try{await App.patch(`/api/purchase-orders/${id}/${a}`,{});App.toast('Done','success');loadPO(pg);}catch(e){}}
+document.addEventListener('DOMContentLoaded',()=>loadPO(0));
+</script>
+</section>
+</html>
